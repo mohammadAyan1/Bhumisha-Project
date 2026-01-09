@@ -1,0 +1,150 @@
+@import "tailwindcss";
+* {
+  .capitalize-first-letter {
+    text-transform: lowercase !important; /* sabko chhota karo */
+  }
+
+  /* html,
+  body {
+    overflow-x: hidden;
+  } */
+
+  .sidebar {
+  overflow-y: auto;
+}
+
+  .capitalize-first-letter::first-letter {
+    text-transform: uppercase !important; /* sirf pehla letter bada karo */
+  }
+}
+:root {
+  --bg: #ffffff;
+  --text-color: #111827;
+  --accent: #4f46e5;
+  --secondary-bg: #f3f4f6;
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+.animate-slide-in {
+  animation: slide-in 180ms ease-out;
+}
+
+.dark {
+  --bg: #0f172a;
+  --text-color: #f1f5f9;
+  --accent: #60a5fa;
+  --secondary-bg: #1e293b;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slideDown {
+  animation: slideDown 0.25s ease-out;
+}
+
+/* --- Global Responsive Enhancements (non-destructive) --- */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure form fields never overflow on small screens */
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+/* Make all data tables horizontally scrollable on small viewports */
+.table-responsive,
+table {
+  width: 100%;
+}
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Utility: stack grid children on very small screens without removing fields */
+@media (max-width: 640px) {
+  .stack-sm {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .stack-sm > * {
+    min-width: 0;
+  }
+}
+
+@media print {
+  .sidebar,
+  .navbar,
+  .Sidebar,   /* Sometimes components use capital 'S' */
+  .Navbar,
+  .no-print,
+  aside,
+  nav {
+    display: none !important;
+  }
+  main,
+  .flex-1,
+  .p-2, /* Main content wrapper classes */
+  #invoice-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+
+.horizontal-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
