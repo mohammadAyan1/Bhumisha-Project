@@ -68,14 +68,22 @@ const clusterTransactionRoutes = require("./routes/clusterTransactionRoutes");
 const clusterCultivateRoutes = require("./routes/clusterCultivate.routes");
 // ---------- Core Config ----------
 const NODE_ENV = process.env.NODE_ENV || "development";
-const FRONTEND_URL = process.env.FRONTEND_URL || process.env.FRONTEND2_URL;
 const JSON_LIMIT = process.env.JSON_LIMIT || "2mb";
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND2_URL = process.env.FRONTEND2_URL;
 const FRONTEND3_URL = process.env.FRONTEND3_URL;
+const FRONTEND4_URL = process.env.FRONTEND4_URL;
+const FRONTEND5_URL = process.env.FRONTEND5_URL;
+const FRONTEND6_URL = process.env.FRONTEND6_URL;
 // const FRONTEND4_URL = process.env.FRONTEND4_URL;
 
 const allowedOrigins = [
   FRONTEND_URL,
+  FRONTEND2_URL,
   FRONTEND3_URL,
+  FRONTEND4_URL,
+  FRONTEND5_URL,
+  FRONTEND6_URL,
   "http://localhost:5174",
   "http://localhost:5173",
 ].filter(Boolean);

@@ -831,8 +831,8 @@ const billController = {
           newLeftAmount <= 0
             ? "Paid"
             : newPaidAmount > 0
-            ? "Partial"
-            : "Unpaid";
+              ? "Partial"
+              : "Unpaid";
 
         if (billType === "sale") {
           await executeTransactionQuery(
@@ -928,13 +928,13 @@ const billController = {
       const purchasePayment =
         salePayment.length === 0
           ? await executeQuery(
-              `SELECT pp.*, p.*, c.code as company_code 
+            `SELECT pp.*, p.*, c.code as company_code 
          FROM purchase_payments pp
          JOIN purchases p ON pp.purchases_id = p.id
          LEFT JOIN companies c ON c.id = p.company_id
          WHERE pp.id = ?`,
-              [paymentId]
-            )
+            [paymentId]
+          )
           : [];
 
       if (salePayment.length === 0 && purchasePayment.length === 0) {
@@ -1044,8 +1044,8 @@ const billController = {
           newLeftAmount <= 0
             ? "Paid"
             : newPaidAmount > 0
-            ? "Partial"
-            : "Unpaid";
+              ? "Partial"
+              : "Unpaid";
 
         await executeTransactionQuery(
           transactionConnection,
@@ -1230,8 +1230,8 @@ const billController = {
           newLeftAmount <= 0
             ? "Paid"
             : newPaidAmount > 0
-            ? "Partial"
-            : "Unpaid";
+              ? "Partial"
+              : "Unpaid";
 
         await executeTransactionQuery(
           transactionConnection,

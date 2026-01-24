@@ -559,14 +559,14 @@ const ClusterTransaction = () => {
                       >
                         🗑️
                       </span>
-                      <span
+                      {/* <span
                         onClick={() => {
                           setClusterTransactionId(item?.id), setOpenModel(true);
                         }}
                         className="p-1 border border-blue-400 hover:bg-blue-500 cursor-pointer"
                       >
                         Pay
-                      </span>
+                      </span> */}
                     </div>
                   </td>
                 </tr>

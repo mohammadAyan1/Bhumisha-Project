@@ -80,9 +80,8 @@ function toWords(n) {
     if (x < 100)
       return `${b[Math.floor(x / 10)]}${x % 10 ? " " + a[x % 10] : ""}`;
     if (x < 1000)
-      return `${a[Math.floor(x / 100)]} Hundred${
-        x % 100 ? " " + s(x % 100) : ""
-      }`;
+      return `${a[Math.floor(x / 100)]} Hundred${x % 100 ? " " + s(x % 100) : ""
+        }`;
     return "";
   };
 
@@ -560,7 +559,7 @@ ${url}`;
                   <div className="font-semibold text-[9px]">
                     {safe(
                       formatDateTime(sale.challan_date) ||
-                        formatDateTime(sale.bill_date),
+                      formatDateTime(sale.bill_date),
                       ""
                     )}
                   </div>
@@ -611,7 +610,7 @@ ${url}`;
               <div className="font-semibold mb-0.5">Terms and Conditions</div>
               <div className="whitespace-pre-line text-[8px] leading-3">
                 {sale.remarks ||
-                  `Subject to Maharashtra Jurisdiction.\nOur Responsibility Ceases as soon as goods leaves our Premises.\nGoods once sold will not taken back.\nDelivery Ex: Premises.\nCustomer Signature`}
+                  `Subject to Bhopal Jurisdiction.\nOur Responsibility Ceases as soon as goods leaves our Premises.\nGoods once sold will not taken back.\nTransport as per actual.\nTotal payment due in 15 days`}
               </div>
             </div>
           </div>
@@ -659,8 +658,8 @@ ${url}`;
                       const gstp = Number(r.gst_percent || r.tax_percent || 0);
                       const gstAmt =
                         Number(r.gst_amount || r.cgst_amount || 0) +
-                          Number(r.sgst_amount || 0) +
-                          Number(r.igst_amount || 0) || (taxable * gstp) / 100;
+                        Number(r.sgst_amount || 0) +
+                        Number(r.igst_amount || 0) || (taxable * gstp) / 100;
                       const net = Number(r.net_total || taxable + gstAmt);
                       const unit = r.unit || r.unit_code || "NOS";
                       const desc =

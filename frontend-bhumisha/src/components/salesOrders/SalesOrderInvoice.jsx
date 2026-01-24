@@ -51,9 +51,8 @@ function toWords(n) {
     if (x < 100)
       return `${b[Math.floor(x / 10)]}${x % 10 ? " " + a[x % 10] : ""}`;
     if (x < 1000)
-      return `${a[Math.floor(x / 100)]} Hundred${
-        x % 100 ? " " + s(x % 100) : ""
-      }`;
+      return `${a[Math.floor(x / 100)]} Hundred${x % 100 ? " " + s(x % 100) : ""
+        }`;
     return "";
   };
   const units = [
@@ -441,11 +440,10 @@ Thank you.`;
                       </td>
                       <td className="border border-black py-1 px-1 text-right">
                         {disc > 0
-                          ? `${fmt(disc)}${
-                              it.discount_percent
-                                ? ` (${fmt(it.discount_percent, 0)}%)`
-                                : ""
-                            }`
+                          ? `${fmt(disc)}${it.discount_percent
+                            ? ` (${fmt(it.discount_percent, 0)}%)`
+                            : ""
+                          }`
                           : "0.00"}
                       </td>
                       <td className="border border-black py-1 px-1 text-center">
