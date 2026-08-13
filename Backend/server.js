@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS tpl_sales (
   KEY idx_tpl_sales_date (bill_date)
 ) ENGINE=InnoDB;`,
   // 4) tpl_sale_items
+  // 4) tpl_sale_items
+
   `
 CREATE TABLE IF NOT EXISTS tpl_sale_items (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
