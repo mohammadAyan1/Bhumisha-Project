@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS company_bank_details (
       FOREIGN KEY (bank_detail_id) REFERENCES company_bank_details(id)
       ON DELETE SET NULL`).catch(() => { });
     for (const stmt of DDL_TEMPLATES) {
-      await exec(stmt); // run each CREATE separately
+      await exec(stmt); // run each CREATE separately////
     }
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (e) {
