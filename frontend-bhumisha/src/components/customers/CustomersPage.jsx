@@ -2253,6 +2253,8 @@ export default function CustomersPage() {
                   <th className="p-3 border text-left">Phone</th>
                   <th className="p-3 border text-left">Address</th>
                   <th className="p-3 border text-left">GST No.</th>
+                  <th className="p-3 border text-left">Total Invoiced</th>
+                  <th className="p-3 border text-left">Total Paid</th>
                   <th className="p-3 border text-left">Balance</th>
                   <th className="p-3 border text-left">Status</th>
                   <th className="p-3 border text-left">Created At</th>
@@ -2288,6 +2290,8 @@ export default function CustomersPage() {
                       <td className="p-3 border">
                         {r.gst_no || r.GST_No || "-"}
                       </td>
+                      <td className="p-3 border">{inr(Number(r.total_invoiced || 0))}</td>
+                      <td className="p-3 border">{inr(Number(r.total_paid || 0))}</td>
                       <td
                         className={`p-3 border ${
                           isNeg || isOverMin
@@ -2507,25 +2511,25 @@ export default function CustomersPage() {
               <div className="p-3 rounded bg-white shadow-sm">
                 <div className="text-xs text-gray-500">Total Invoiced</div>
                 <div className="font-semibold">
-                  {inr(statementTotals?.total_invoiced || 0)}
+                  {inr(statementTotals?.total_invoiced_upto || statementTotals?.total_invoiced || 0)}
                 </div>
               </div>
               <div className="p-3 rounded bg-white shadow-sm">
                 <div className="text-xs text-gray-500">Total Taxable</div>
                 <div className="font-semibold">
-                  {inr(statementTotals?.total_taxable || 0)}
+                  {inr(statementTotals?.total_taxable_upto || statementTotals?.total_taxable || 0)}
                 </div>
               </div>
               <div className="p-3 rounded bg-white shadow-sm">
                 <div className="text-xs text-gray-500">Total GST</div>
                 <div className="font-semibold">
-                  {inr(statementTotals?.total_gst || 0)}
+                  {inr(statementTotals?.total_gst_upto || statementTotals?.total_gst || 0)}
                 </div>
               </div>
               <div className="p-3 rounded bg-white shadow-sm">
                 <div className="text-xs text-gray-500">Total Paid</div>
                 <div className="font-semibold">
-                  {inr(statementTotals?.total_paid || 0)}
+                  {inr(statementTotals?.total_paid_upto || statementTotals?.total_paid || 0)}
                 </div>
               </div>
               <div className="p-3 rounded bg-white shadow-sm">
@@ -2590,9 +2594,9 @@ export default function CustomersPage() {
                         </td>
                         <td className="p-2 border">{r.note || "-"}</td>
                         <td className="p-2 border">
-                          {r.tx_type === "INVOICE" && r.sale_id && (
+                          {r.tx_type === "INVOICE" && r.ref_id && (
                             <button
-                              onClick={() => setShowSaleDetails(r.sale_id)}
+                              onClick={() => setShowSaleDetails(r.ref_id)}
                               className="px-2 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
                               title="View sale details"
                             >

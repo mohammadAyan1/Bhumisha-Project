@@ -16,6 +16,27 @@ import {
 import { toast } from "react-toastify";
 
 const ExpensesList = ({ onchangeEdit, switchTable }) => {
+  const getCurrentMonthDates = () => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    const startDate = new Date(currentYear, currentMonth, 1);
+    const endDate = new Date(currentYear, currentMonth + 1, 0);
+
+    const formatDateForInput = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      start: formatDateForInput(startDate),
+      end: formatDateForInput(endDate),
+    };
+  };
+
   const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [gstBillExpenses, setGstBillExpenses] = useState([]);
@@ -35,10 +56,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
     expenses_for: "",
     expenses_type: "",
     company: "",
-    date_range: {
-      start: "",
-      end: "",
-    },
+    date_range: getCurrentMonthDates(),
   });
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -161,6 +179,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
         if (filters.date_range.start && filters.date_range.end) {
           const startDate = new Date(filters.date_range.start);
           const endDate = new Date(filters.date_range.end);
+          endDate.setHours(23, 59, 59, 999);
           return expenseDate >= startDate && expenseDate <= endDate;
         }
 
@@ -171,6 +190,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
 
         if (filters.date_range.end) {
           const endDate = new Date(filters.date_range.end);
+          endDate.setHours(23, 59, 59, 999);
           return expenseDate <= endDate;
         }
 
@@ -238,10 +258,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
       expenses_for: "",
       expenses_type: "",
       company: "",
-      date_range: {
-        start: "",
-        end: "",
-      },
+      date_range: getCurrentMonthDates(),
     });
     setSortConfig({ key: null, direction: "ascending" });
   };
@@ -287,6 +304,36 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
   useEffect(() => {
     fetchGstBillExpenses();
   }, []);
+
+  const filteredGstExpenses = useMemo(() => {
+    let result = [...gstBillExpenses];
+    if (filters.date_range.start || filters.date_range.end) {
+      result = result.filter((exp) => {
+        const expenseDate = new Date(exp.bill_date);
+
+        if (filters.date_range.start && filters.date_range.end) {
+          const startDate = new Date(filters.date_range.start);
+          const endDate = new Date(filters.date_range.end);
+          endDate.setHours(23, 59, 59, 999);
+          return expenseDate >= startDate && expenseDate <= endDate;
+        }
+
+        if (filters.date_range.start) {
+          const startDate = new Date(filters.date_range.start);
+          return expenseDate >= startDate;
+        }
+
+        if (filters.date_range.end) {
+          const endDate = new Date(filters.date_range.end);
+          endDate.setHours(23, 59, 59, 999);
+          return expenseDate <= endDate;
+        }
+
+        return true;
+      });
+    }
+    return result;
+  }, [gstBillExpenses, filters.date_range]);
 
   const handleSortTable = (data) => {
     const sortedData = [...gstBillExpenses].sort((a, b) => {
@@ -336,8 +383,8 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                   ? `${filteredExpenses.length} expense${
                       filteredExpenses.length !== 1 ? "s" : ""
                     } found`
-                  : `${gstBillExpenses.length} GST bill expense${
-                      gstBillExpenses.length !== 1 ? "s" : ""
+                  : `${filteredGstExpenses.length} GST bill expense${
+                      filteredGstExpenses.length !== 1 ? "s" : ""
                     } found`}
               </p>
             </div>
@@ -377,15 +424,16 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
             </div>
           )}
 
-          {/* Filter Controls - Only show for regular expenses */}
-          {openSecondTable && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-              {/* Expense For Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FaFilter className="inline mr-2" />
-                  Expense For
-                </label>
+          {/* Filter Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            {openSecondTable && (
+              <>
+                {/* Expense For Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <FaFilter className="inline mr-2" />
+                    Expense For
+                  </label>
                 <select
                   value={filters.expenses_for}
                   onChange={(e) =>
@@ -462,12 +510,15 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                 </select>
               </div>
 
-              {/* Date Range Filter */}
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FaCalendarAlt className="inline mr-2" />
-                  Date Range
-                </label>
+              </>
+            )}
+
+            {/* Date Range Filter */}
+            <div className={`lg:col-span-2 ${!openSecondTable ? 'lg:col-start-1' : ''}`}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <FaCalendarAlt className="inline mr-2" />
+                Date Range
+              </label>
                 <div className="flex flex-col gap-3 lg:flex-row">
                   <input
                     type="date"
@@ -499,16 +550,14 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Active Filters Display - Only for regular expenses */}
-          {openSecondTable &&
-            (filters.expenses_for ||
-              filters.expenses_type ||
-              filters.company ||
-              filters.date_range.start ||
-              filters.date_range.end) && (
-              <div className="flex flex-wrap gap-2 mb-4">
+          {/* Active Filters Display */}
+          {(filters.expenses_for ||
+            filters.expenses_type ||
+            filters.company ||
+            filters.date_range.start ||
+            filters.date_range.end) && (
+            <div className="flex flex-wrap gap-2 mb-4">
                 {filters.expenses_for && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
                     Category: {filters.expenses_for}
@@ -636,7 +685,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {gstBillExpenses?.length === 0 ? (
+                      {filteredGstExpenses?.length === 0 ? (
                         <tr>
                           <td colSpan={11} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
@@ -648,7 +697,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                           </td>
                         </tr>
                       ) : (
-                        gstBillExpenses?.map((item, index) => {
+                        filteredGstExpenses?.map((item, index) => {
                           const documentUrl = getDocumentUrl(item.bill_image);
 
                           return (
@@ -744,19 +793,19 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
             )}
 
             {/* GST Bill Summary */}
-            {gstBillExpenses?.length > 0 && !loadingGstBills && (
+            {filteredGstExpenses?.length > 0 && !loadingGstBills && (
               <div className="mt-6 bg-white shadow-sm rounded-lg p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-gray-800">
-                      {gstBillExpenses.length}
+                      {filteredGstExpenses.length}
                     </div>
                     <div className="text-sm text-gray-600">Total Bills</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-green-600">
                       ₹
-                      {gstBillExpenses
+                      {filteredGstExpenses
                         .reduce(
                           (sum, bill) =>
                             sum + parseFloat(bill?.total_amount || 0),
@@ -772,7 +821,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
                       ₹
-                      {gstBillExpenses
+                      {filteredGstExpenses
                         .reduce(
                           (sum, bill) =>
                             sum + parseFloat(bill?.total_gst_amount || 0),

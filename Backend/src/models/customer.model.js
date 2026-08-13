@@ -34,13 +34,31 @@ const Customer = {
   getAll: (callback) => {
     const sql = `
     SELECT
-      id, name, firm_name, email, phone, address, GST_No AS gst_no,
-      balance, min_balance, status,
-      DATE_FORMAT(created_at, '%Y-%m-%d %h:%i:%s %p') AS created_at_formatted,
-      DATE_FORMAT(updated_at, '%Y-%m-%d %h:%i:%s %p') AS updated_at_formatted,
-      created_at, updated_at
-    FROM customers
-    ORDER BY status, id DESC
+      c.id, c.name, c.firm_name, c.email, c.phone, c.address, c.GST_No AS gst_no,
+      c.balance, c.min_balance, c.status,
+      DATE_FORMAT(c.created_at, '%Y-%m-%d %h:%i:%s %p') AS created_at_formatted,
+      DATE_FORMAT(c.updated_at, '%Y-%m-%d %h:%i:%s %p') AS updated_at_formatted,
+      c.created_at, c.updated_at,
+      COALESCE(s.total_invoiced, 0) AS total_invoiced,
+      COALESCE(s.total_taxable, 0) AS total_taxable,
+      COALESCE(s.total_gst, 0) AS total_gst,
+      COALESCE(p.total_paid, 0) AS total_paid
+    FROM customers c
+    LEFT JOIN (
+        SELECT customer_id, 
+               SUM(total_amount) AS total_invoiced,
+               SUM(total_taxable) AS total_taxable,
+               SUM(total_gst) AS total_gst
+        FROM sales 
+        WHERE status = 'Active' 
+        GROUP BY customer_id
+    ) s ON c.id = s.customer_id
+    LEFT JOIN (
+        SELECT customer_id, SUM(amount) AS total_paid
+        FROM sale_payments
+        GROUP BY customer_id
+    ) p ON c.id = p.customer_id
+    ORDER BY c.status, COALESCE(NULLIF(c.firm_name, ''), c.name) ASC
   `;
     db.query(sql, (err, results) => callback(err, results));
   },
@@ -231,7 +249,7 @@ const Customer = {
           s.total_amount AS debit_amount,
           0.00 AS credit_amount,
           s.remarks AS note,
-          NULL AS payment_method,
+          s.payment_method AS payment_method,
           s.total_taxable,
           s.total_gst,
           s.total_amount,

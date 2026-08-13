@@ -56,6 +56,7 @@ const rollback = (conn) =>
 
 const release = (conn) => {
   if (typeof conn.release === "function") conn.release();
+  else if (typeof conn.end === "function") conn.end();
 };
 
 // Get next PO number

@@ -616,6 +616,7 @@ const Dropdowns = ({ editData, clearEditData }) => {
                 <option value="">Select Type</option>
                 <option value="advance">Advance</option>
                 <option value="salary">Salary</option>
+                <option value="allowance">Allowance</option>
                 <option value="others">Others</option>
               </select>
               {errors.subCategory && (

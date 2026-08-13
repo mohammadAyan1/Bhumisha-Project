@@ -843,8 +843,8 @@ const billController = {
         } else {
           await executeTransactionQuery(
             transactionConnection,
-            `UPDATE purchases SET paid_amount = ?, payment_status = ? WHERE id = ?`,
-            [newPaidAmount, paymentStatus, billId]
+            `UPDATE purchases SET paid_amount = ? WHERE id = ?`,
+            [newPaidAmount, billId]
           );
         }
 
@@ -860,9 +860,9 @@ const billController = {
           } else {
             await executeTransactionQuery(
               transactionConnection,
-              `UPDATE \`${purchasesTable}\` SET paid_amount = ?, payment_status = ?
+              `UPDATE \`${purchasesTable}\` SET paid_amount = ?
                WHERE reference_id = ? OR id = ?`,
-              [newPaidAmount, paymentStatus, billId, billId]
+              [newPaidAmount, billId, billId]
             );
           }
         } catch (err) {
@@ -1047,11 +1047,19 @@ const billController = {
               ? "Partial"
               : "Unpaid";
 
-        await executeTransactionQuery(
-          transactionConnection,
-          `UPDATE ${billTable} SET paid_amount = ?, payment_status = ? WHERE id = ?`,
-          [newPaidAmount, paymentStatus, billId]
-        );
+        if (isSale) {
+          await executeTransactionQuery(
+            transactionConnection,
+            `UPDATE ${billTable} SET paid_amount = ?, payment_status = ? WHERE id = ?`,
+            [newPaidAmount, paymentStatus, billId]
+          );
+        } else {
+          await executeTransactionQuery(
+            transactionConnection,
+            `UPDATE ${billTable} SET paid_amount = ? WHERE id = ?`,
+            [newPaidAmount, billId]
+          );
+        }
 
         // 4. Update COMPANY bill paid amount (if exists)
         const companyBillTable = isSale ? salesTable : purchasesTable;
@@ -1064,13 +1072,23 @@ const billController = {
           );
 
           if (companyBill.length > 0) {
-            await executeTransactionQuery(
-              transactionConnection,
-              `UPDATE \`${companyBillTable}\` 
-               SET paid_amount = ?, payment_status = ?
-               WHERE reference_id = ?`,
-              [newPaidAmount, paymentStatus, billId]
-            );
+            if (isSale) {
+              await executeTransactionQuery(
+                transactionConnection,
+                `UPDATE \`${companyBillTable}\` 
+                 SET paid_amount = ?, payment_status = ?
+                 WHERE reference_id = ?`,
+                [newPaidAmount, paymentStatus, billId]
+              );
+            } else {
+              await executeTransactionQuery(
+                transactionConnection,
+                `UPDATE \`${companyBillTable}\` 
+                 SET paid_amount = ?
+                 WHERE reference_id = ?`,
+                [newPaidAmount, billId]
+              );
+            }
           }
         } catch (err) {
           console.error("Company bill table update skipped:", err.message);
@@ -1233,11 +1251,19 @@ const billController = {
               ? "Partial"
               : "Unpaid";
 
-        await executeTransactionQuery(
-          transactionConnection,
-          `UPDATE ${billTable} SET paid_amount = ?, payment_status = ? WHERE id = ?`,
-          [newPaidAmount, paymentStatus, billId]
-        );
+        if (isSale) {
+          await executeTransactionQuery(
+            transactionConnection,
+            `UPDATE ${billTable} SET paid_amount = ?, payment_status = ? WHERE id = ?`,
+            [newPaidAmount, paymentStatus, billId]
+          );
+        } else {
+          await executeTransactionQuery(
+            transactionConnection,
+            `UPDATE ${billTable} SET paid_amount = ? WHERE id = ?`,
+            [newPaidAmount, billId]
+          );
+        }
 
         // 4. Update COMPANY bill paid amount (if exists)
         try {
@@ -1249,13 +1275,23 @@ const billController = {
           );
 
           if (companyBill.length > 0) {
-            await executeTransactionQuery(
-              transactionConnection,
-              `UPDATE \`${companyBillTable}\` 
-               SET paid_amount = ?, payment_status = ?
-               WHERE reference_id = ?`,
-              [newPaidAmount, paymentStatus, billId]
-            );
+            if (isSale) {
+              await executeTransactionQuery(
+                transactionConnection,
+                `UPDATE \`${companyBillTable}\` 
+                 SET paid_amount = ?, payment_status = ?
+                 WHERE reference_id = ?`,
+                [newPaidAmount, paymentStatus, billId]
+              );
+            } else {
+              await executeTransactionQuery(
+                transactionConnection,
+                `UPDATE \`${companyBillTable}\` 
+                 SET paid_amount = ?
+                 WHERE reference_id = ?`,
+                [newPaidAmount, billId]
+              );
+            }
           }
         } catch (err) {
           console.error("Company bill table update skipped:", err.message);

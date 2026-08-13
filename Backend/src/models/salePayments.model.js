@@ -4,17 +4,26 @@ const mysql = require('mysql2/promise');
 
 const { tn } = require('../services/tableName');
 
-const SalePayments = {
-  getConnection: async () => {
-    const conn = await mysql.createConnection({
+let _pool;
+const getConnection = async () => {
+  if (!_pool) {
+    _pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       port: process.env.DB_PORT,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
+      multipleStatements: false,
+      connectionLimit: 10,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
     });
-    return conn;
-  },
+  }
+  return await _pool.getConnection();
+};
+
+const SalePayments = {
+  getConnection,
   create: async ({ sale_id, customer_id, payment_date, amount, method = 'Cash', remarks = null, code = null, party_type = null, vendor_id = null, farmer_id = null }) => {
     if (!sale_id || !payment_date || !amount) {
       throw new Error('sale_id, payment_date, amount are required');
@@ -24,8 +33,8 @@ const SalePayments = {
       await conn.beginTransaction();
 
       const paymentsTable = code ? tn(code, 'sale_payments') : 'sale_payments';
-        // Ensure table exists
-        if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
+      // Ensure table exists
+      if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
 
       // Insert payment (company-specific if code provided)
       await conn.execute(
@@ -64,7 +73,7 @@ const SalePayments = {
       await conn.rollback();
       throw e;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -72,14 +81,14 @@ const SalePayments = {
     const conn = await SalePayments.getConnection();
     try {
       const paymentsTable = code ? tn(code, 'sale_payments') : 'sale_payments';
-        if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
+      if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
       const [rows] = await conn.execute(
         `SELECT * FROM \`${paymentsTable}\` WHERE sale_id=? ORDER BY id DESC`,
         [sale_id]
       );
       return rows;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -89,7 +98,7 @@ const SalePayments = {
       await conn.beginTransaction();
 
       const paymentsTable = code ? tn(code, 'sale_payments') : 'sale_payments';
-    if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
+      if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
       // Find sale_id to recompute status after delete
       const [[row]] = await conn.query(`SELECT sale_id FROM \`${paymentsTable}\` WHERE id=?`, [id]);
       if (!row) {
@@ -120,23 +129,23 @@ const SalePayments = {
       await conn.rollback();
       throw e;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
   getByCustomerId: async (customer_id, code = null) => {
-  const conn = await SalePayments.getConnection();
-  try {
-    const paymentsTable = code ? tn(code, 'sale_payments') : 'sale_payments';
+    const conn = await SalePayments.getConnection();
+    try {
+      const paymentsTable = code ? tn(code, 'sale_payments') : 'sale_payments';
       if (code) await conn.execute(`CREATE TABLE IF NOT EXISTS \`${paymentsTable}\` LIKE \`tpl_sale_payments\``);
-    const [rows] = await conn.execute(
-      `SELECT * FROM \`${paymentsTable}\` WHERE customer_id=? ORDER BY payment_date ASC, id ASC`,
-      [customer_id]
-    );
-    return rows;
-  } finally {
-    await conn.end();
-  }
-},
+      const [rows] = await conn.execute(
+        `SELECT * FROM \`${paymentsTable}\` WHERE customer_id=? ORDER BY payment_date ASC, id ASC`,
+        [customer_id]
+      );
+      return rows;
+    } finally {
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
+    }
+  },
 };
 
 module.exports = SalePayments;

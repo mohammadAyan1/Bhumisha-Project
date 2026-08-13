@@ -11,6 +11,7 @@ import { useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useAuth } from "../../contexts/AuthContext";
 import PurchaseOrder from "../../axios/poOrder";
+import ProductFormModal from "../products/ProductFormModal.jsx";
 
 const fx = (n) => (isNaN(n) ? "0.000" : Number(n).toFixed(3));
 
@@ -141,6 +142,8 @@ const PurchaseForm = ({ onSaved }) => {
     },
   ]);
 
+  const [productModalOpen, setProductModalOpen] = useState(false);
+
   // Update originalAvailable when products change
   useEffect(() => {
     if (!products?.length) return;
@@ -164,22 +167,10 @@ const PurchaseForm = ({ onSaved }) => {
         const [vRes, fRes, pRes] = await Promise.all([
           VendorAPI.getAll(),
           FarmerAPI.getAll(),
-          ProductAPI.getAll(),
         ]);
         setVendors(vRes?.data || []);
         setFarmers(fRes?.data || []);
-        const all = (pRes?.data || []).map((p) => ({
-          id: p.id,
-          product_name: p.product_name,
-          hsn_code: p.hsn_code || "",
-          available: Number(p.size || 0), // Size in grams from product
-          purchaseRate: Number(p.purchase_rate || 0),
-          gst_percent: Number(p.gst_percent ?? p.gst_rate ?? p.gst ?? 0),
-          unit: p.unit || "",
-          raw: p,
-          type: p?.type,
-        }));
-        setProducts(all);
+        await loadProducts();
 
         const now = new Date();
         const y = now.getFullYear();
@@ -203,6 +194,26 @@ const PurchaseForm = ({ onSaved }) => {
     };
     fetchMaster();
   }, []);
+
+  const loadProducts = async () => {
+    try {
+      const pRes = await ProductAPI.getAll();
+      const all = (pRes?.data || []).map((p) => ({
+        id: p.id,
+        product_name: p.product_name,
+        hsn_code: p.hsn_code || "",
+        available: Number(p.size || 0),
+        purchaseRate: Number(p.purchase_rate || 0),
+        gst_percent: Number(p.gst_percent ?? p.gst_rate ?? p.gst ?? 0),
+        unit: p.unit || "",
+        raw: p,
+        type: p?.type,
+      }));
+      setProducts(all);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const { poOrder } = useAuth();
 
@@ -305,8 +316,8 @@ const PurchaseForm = ({ onSaved }) => {
         vendor_id: id,
         farmer_id: "",
         address: v?.address || "",
-        mobile_no: v?.contact_number || "",
-        gst_no: v?.gst_no || "",
+        mobile_no: v?.contact_number || v?.phone || "",
+        gst_no: v?.GST_No || v?.gst_no || "",
         party_balance: Number(v?.balance ?? 0),
         party_min_balance: Number(v?.min_balance ?? 0),
         old_amount: Number(v?.balance ?? 0),
@@ -318,9 +329,9 @@ const PurchaseForm = ({ onSaved }) => {
         ...prev,
         farmer_id: id,
         vendor_id: "",
-        address: "",
-        mobile_no: f?.contact_number || "",
-        gst_no: "",
+        address: f?.village || f?.address || "",
+        mobile_no: f?.contact_number || f?.phone || "",
+        gst_no: f?.GST_No || f?.gst_no || "",
         party_balance: Number(f?.balance ?? 0),
         party_min_balance: Number(f?.min_balance ?? 0),
         old_amount: Number(f?.balance ?? 0),
@@ -1002,6 +1013,16 @@ const PurchaseForm = ({ onSaved }) => {
         FINAL AMOUNT (with Transport): {fx(finalTotalWithTransport)}
       </div>
       {/* Items Table */}
+      <div className="flex justify-between items-center mb-2 px-2 mt-4">
+        <h2 className="font-bold text-lg text-gray-800">Items</h2>
+        <button
+          type="button"
+          onClick={() => setProductModalOpen(true)}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm shadow transition-colors"
+        >
+          ➕ Add New Product
+        </button>
+      </div>
       <div className="overflow-auto">
         <table className="w-full text-sm border">
           <thead className="bg-green-700 text-white">
@@ -1202,22 +1223,24 @@ const PurchaseForm = ({ onSaved }) => {
         </button>
         <button
           type="submit"
-          disabled={loading || !isFormValid}
-          className={`px-6 py-2 active:scale-95 rounded text-white bg-green-700 transition-opacity duration-200 ${
-            loading || !isFormValid
-              ? "opacity-50 cursor-not-allowed"
-              : "opacity-100 cursor-pointer"
-          }`}
+          className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded shadow disabled:opacity-50"
+          disabled={loading}
         >
           {loading
             ? isEditMode
               ? "Updating..."
-              : "Saving..."
+              : "Creating..."
             : isEditMode
             ? "Update"
-            : "Save Purchase"}
+            : "Create"}
         </button>
       </div>
+
+      <ProductFormModal
+        open={productModalOpen}
+        hide={() => setProductModalOpen(false)}
+        onSuccess={() => loadProducts()}
+      />
     </form>
   );
 };

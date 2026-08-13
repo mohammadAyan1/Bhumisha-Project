@@ -153,8 +153,10 @@ const balanceSheetController = {
           totalPurchasesGST: openingBalance.totalPurchasesGST,
           totalExpenses: openingBalance.totalExpenses,
           totalExpensesGST: openingBalance.totalExpensesGST,
-          outstandingToReceive: outstandingToReceive,
-          outstandingToPay: outstandingToPay,
+          outstandingToReceive: outstandingToReceive.outstanding,
+          receivedAmount: outstandingToReceive.received,
+          outstandingToPay: outstandingToPay.outstanding,
+          paidAmount: outstandingToPay.paid,
           period: `${previousMonthData.month}/${previousMonthData.year}`,
         },
         monthlySales: monthlySales,
@@ -606,40 +608,48 @@ async function getMonthlyExpenses(companyId, month, year) {
 async function getOutstandingToReceive(companyId, month, year) {
   try {
     const sql = `
-      SELECT COALESCE(SUM(s.total_amount - COALESCE(s.paid_amount, 0)), 0) as totalOutstanding
+      SELECT 
+        COALESCE(SUM(CASE WHEN (s.total_amount - COALESCE(s.paid_amount, 0)) > 0 THEN (s.total_amount - COALESCE(s.paid_amount, 0)) ELSE 0 END), 0) as totalOutstanding,
+        COALESCE(SUM(s.paid_amount), 0) as totalReceived
       FROM sales s
       WHERE s.company_id = ? 
         AND MONTH(s.bill_date) = ?
         AND YEAR(s.bill_date) = ?
         AND s.status = 'Active'
-        AND (s.total_amount - COALESCE(s.paid_amount, 0)) > 0
     `;
 
     const result = await executeQuery(sql, [companyId, month, year]);
-    return formatCurrency(result[0]?.totalOutstanding);
+    return {
+      outstanding: formatCurrency(result[0]?.totalOutstanding),
+      received: formatCurrency(result[0]?.totalReceived)
+    };
   } catch (error) {
     console.error("Error getting outstanding to receive:", error);
-    return 0;
+    return { outstanding: 0, received: 0 };
   }
 }
 
 async function getOutstandingToPay(companyId, month, year) {
   try {
     const sql = `
-      SELECT COALESCE(SUM(p.total_amount - COALESCE(p.paid_amount, 0)), 0) as totalOutstanding
+      SELECT 
+        COALESCE(SUM(CASE WHEN (p.total_amount - COALESCE(p.paid_amount, 0)) > 0 THEN (p.total_amount - COALESCE(p.paid_amount, 0)) ELSE 0 END), 0) as totalOutstanding,
+        COALESCE(SUM(p.paid_amount), 0) as totalPaid
       FROM purchases p
       WHERE p.company_id = ? 
         AND MONTH(p.bill_date) = ?
         AND YEAR(p.bill_date) = ?
         AND p.status = 'Active'
-        AND (p.total_amount - COALESCE(p.paid_amount, 0)) > 0
     `;
 
     const result = await executeQuery(sql, [companyId, month, year]);
-    return formatCurrency(result[0]?.totalOutstanding);
+    return {
+      outstanding: formatCurrency(result[0]?.totalOutstanding),
+      paid: formatCurrency(result[0]?.totalPaid)
+    };
   } catch (error) {
     console.error("Error getting outstanding to pay:", error);
-    return 0;
+    return { outstanding: 0, paid: 0 };
   }
 }
 
@@ -695,24 +705,26 @@ async function getClosingBalance(companyId, month, year) {
 
     // Get outstanding to receive for the selected month
     const outstandingToReceiveSql = `
-      SELECT COALESCE(SUM(s.total_amount - COALESCE(s.paid_amount, 0)), 0) as totalOutstanding
+      SELECT 
+        COALESCE(SUM(CASE WHEN (s.total_amount - COALESCE(s.paid_amount, 0)) > 0 THEN (s.total_amount - COALESCE(s.paid_amount, 0)) ELSE 0 END), 0) as totalOutstanding,
+        COALESCE(SUM(s.paid_amount), 0) as totalReceived
       FROM sales s
       WHERE s.company_id = ? 
         AND MONTH(s.bill_date) = ?
         AND YEAR(s.bill_date) = ?
         AND s.status = 'Active'
-        AND (s.total_amount - COALESCE(s.paid_amount, 0)) > 0
     `;
 
     // Get outstanding to pay for the selected month
     const outstandingToPaySql = `
-      SELECT COALESCE(SUM(p.total_amount - COALESCE(p.paid_amount, 0)), 0) as totalOutstanding
+      SELECT 
+        COALESCE(SUM(CASE WHEN (p.total_amount - COALESCE(p.paid_amount, 0)) > 0 THEN (p.total_amount - COALESCE(p.paid_amount, 0)) ELSE 0 END), 0) as totalOutstanding,
+        COALESCE(SUM(p.paid_amount), 0) as totalPaid
       FROM purchases p
       WHERE p.company_id = ? 
         AND MONTH(p.bill_date) = ?
         AND YEAR(p.bill_date) = ?
         AND p.status = 'Active'
-        AND (p.total_amount - COALESCE(p.paid_amount, 0)) > 0
     `;
 
     const [
@@ -743,8 +755,14 @@ async function getClosingBalance(companyId, month, year) {
       outstandingToReceive: formatCurrency(
         outstandingToReceiveResult[0]?.totalOutstanding
       ),
+      receivedAmount: formatCurrency(
+        outstandingToReceiveResult[0]?.totalReceived
+      ),
       outstandingToPay: formatCurrency(
         outstandingToPayResult[0]?.totalOutstanding
+      ),
+      paidAmount: formatCurrency(
+        outstandingToPayResult[0]?.totalPaid
       ),
     };
   } catch (error) {

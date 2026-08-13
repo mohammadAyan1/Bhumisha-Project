@@ -63,7 +63,7 @@ async function runMigration() {
         await connection.execute(
           `ALTER TABLE sales_orders DROP INDEX idx_sales_orders_customer_id`
         );
-      } catch (e) {}
+      } catch (e) { }
 
       await connection.execute(
         `ALTER TABLE sales_orders DROP COLUMN customer_id`

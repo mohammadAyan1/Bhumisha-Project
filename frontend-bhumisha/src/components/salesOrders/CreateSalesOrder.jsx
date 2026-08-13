@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchVendors } from "../../features/vendor/vendorThunks.js";
 import { fetchFarmers } from "../../features/farmers/farmerSlice.js";
+import ProductFormModal from "../products/ProductFormModal.jsx";
 
 const fx = (n, d = 2) => (isNaN(n) ? (0).toFixed(d) : Number(n).toFixed(d));
 
@@ -128,6 +129,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [productModalOpen, setProductModalOpen] = useState(false);
   const [useCostMargin] = useState(true); // Add this state
 
   const [form, setForm] = useState({
@@ -165,6 +167,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
         product_unit: "", // Store the product's base unit
         display_rate: 0, // Rate per kg (for display)
         rate_per_kg: 0, // Rate per kg (for calculations - same as display rate now)
+        custom_product_name: "", // Custom manual product name
       },
     ],
   });
@@ -224,47 +227,49 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
     return Number(sellingRate.toFixed(2));
   };
 
+  const loadProducts = async () => {
+    try {
+      const pRes = await refApi.products();
+      const plist = pRes.data?.list || pRes.data || [];
+      const normalized = plist.map((p) => ({
+        id: p.id ?? p._id,
+        product_name: p.product_name,
+        hsn_code: p.hsn_code || "",
+        default_rate: Number(p.sale_rate ?? p.rate ?? p.value ?? 0),
+        default_gst: Number(p.gst_percent ?? p.gst_rate ?? p.gst ?? 0),
+        available: Number(p.size ?? p.stock ?? p.available ?? 0),
+        cost_rate: Number(p.value ?? p.total ?? 0),
+        discount_25: Number(p.discount_25 || 0),
+        discount_30: Number(p.discount_30 || 0),
+        discount_50: Number(p.discount_50 || 0),
+        total_50: Number(p.total || 0),
+        unit: p.unit || "kg",
+      }));
+      setProducts(normalized);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        const [cRes, pRes, seqRes] = await Promise.all([
+        const [cRes, seqRes] = await Promise.all([
           refApi.customers(),
-          refApi.products(),
           sequenceAPI.next("so", { prefix: "SO-", pad: 6 }),
         ]);
 
         setCustomers(cRes.data || []);
-        const plist = pRes.data?.list || pRes.data || [];
-        const normalized = plist.map((p) => ({
-          id: p.id ?? p._id,
-          product_name: p.product_name,
-          hsn_code: p.hsn_code || "",
-          default_rate: Number(p.sale_rate ?? p.rate ?? p.value ?? 0), // This is per kg
-          default_gst: Number(p.gst_percent ?? p.gst_rate ?? p.gst ?? 0),
-          available: Number(p.size ?? p.stock ?? p.available ?? 0), // This is in grams
-          // use base value as cost, discounts as absolute margin amounts, and keep total (50% margin) if provided
-          cost_rate: Number(p.value ?? p.total ?? 0), // Cost per kg
-          discount_25: Number(p.discount_25 || 0),
-          discount_30: Number(p.discount_30 || 0),
-          discount_50: Number(p.discount_50 || 0),
-          total_50: Number(p.total || 0),
-          unit: p.unit || "kg", // Product's base unit
-          raw: p,
-        }));
-        setProducts(normalized);
         if (!isEditMode) {
-          setForm((prev) => ({ ...prev, so_no: seqRes.data?.value || "" }));
+          setForm((prev) => ({ ...prev, so_no: seqRes.data?.sequence || "" }));
         }
-      } catch (e) {
-        console.error(e);
-        alert(
-          e?.response?.data?.error ||
-            e.message ||
-            "Failed to load reference data"
-        );
+        await loadProducts();
+      } catch (err) {
+        console.error("Init Error", err);
       }
     })();
-  }, [isEditMode, form?.party_type]);
+    // eslint-disable-next-line
+  }, [isEditMode]);
 
   useEffect(() => {
     if (!isEditMode || !so) return;
@@ -325,6 +330,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
           unit: "",
           display_rate: 0,
           manualRate: false,
+          custom_product_name: "",
         },
       ],
     }));
@@ -332,26 +338,6 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
 
   const onHeader = (e) => {
     const { name, value } = e.target;
-
-    // if (name === "buyer_type") {
-    //   // Recompute rates on buyer type change for non-manual rows
-    //   setForm((prev) => {
-    //     const next = { ...prev, [name]: value };
-    //     next.items = next.items.map((row) => {
-    //       if (useCostMargin && !row.manualRate && row.cost_rate > 0) {
-    //         const newRatePerKg = recomputeSellingRate(row, value);
-    //         return {
-    //           ...row,
-    //           rate: Number.isFinite(newRatePerKg) ? newRatePerKg : 0,
-    //           display_rate: Number.isFinite(newRatePerKg) ? newRatePerKg : 0,
-    //         };
-    //       }
-    //       return row;
-    //     });
-    //     return next;
-    //   });
-    //   return;
-    // }
 
     if (name === "buyer_type") {
       setForm((prev) => {
@@ -400,6 +386,37 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
       const next = { ...prev };
       const row = { ...next.items[i] };
 
+      if (name === "product_name_input") {
+        const p = products.find((x) => x.product_name === value);
+        if (p) {
+          row.product_id = String(p.id);
+          row.custom_product_name = "";
+          row.hsn_code = p.hsn_code || "";
+          row.cost_rate = Number(p.cost_rate || 0);
+          row.available_grams = Number(p.available || 0);
+          row.product_unit = p.unit || "kg";
+          row.unit = p.unit || "kg";
+
+          row.discount_25 = Number(p.discount_25 || 0);
+          row.discount_30 = Number(p.discount_30 || 0);
+          row.discount_50 = Number(p.discount_50 || 0);
+          row.total_50 = Number(p.total_50 || 0);
+
+          if (!row.manualRate) {
+            row.qty = row.qty || 1;
+            const newRate = recomputeSellingRate(row);
+            row.rate = newRate;
+            row.display_rate = newRate;
+          }
+        } else {
+          row.product_id = "";
+          row.custom_product_name = value;
+          // Let the user enter manual rates and HSN
+        }
+        next.items = next.items.map((r, idx) => (idx === i ? row : r));
+        return next;
+      }
+
       const numeric = [
         "qty",
         "display_rate",
@@ -412,43 +429,6 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
           ? ""
           : Number(value)
         : value;
-
-      // When product_id changes → update product details
-      // if (name === "product_id") {
-      //   const p = products.find((x) => String(x.id) === String(value));
-      //   row.hsn_code = p?.hsn_code || "";
-      //   row.cost_rate = Number(p?.cost_rate || 0);
-      //   row.available_grams = Number(p?.available || 0); // Store in grams
-      //   row.product_unit = p?.unit || "kg";
-      //   row.discount_25 = Number(p?.discount_25 || 0);
-      //   row.discount_30 = Number(p?.discount_30 || 0);
-      //   row.discount_50 = Number(p?.discount_50 || 0);
-      //   row.total_50 = Number(p?.total_50 || 0);
-      //   row.unit = p?.unit || "kg"; // Set initial unit from product
-
-      //   // Set initial rate based on margin calculation
-      //   if ((!row.rate || row.rate === 0) && p?.cost_rate > 0) {
-      //     const initialRatePerKg = recomputeSellingRate({
-      //       ...row,
-      //       cost_rate: p.cost_rate,
-      //       qty: 1,
-      //       manualRate: false,
-      //     });
-      //     row.rate = initialRatePerKg;
-      //     row.display_rate = initialRatePerKg;
-      //     row.manualRate = false;
-      //   } else if (p?.default_rate != null) {
-      //     row.rate = Number(p.default_rate);
-      //     row.display_rate = Number(p.default_rate);
-      //     row.manualRate = true;
-      //   }
-
-      //   if (
-      //     (!row.gst_percent || row.gst_percent === 0) &&
-      //     p?.default_gst != null
-      //   )
-      //     row.gst_percent = Number(p.default_gst);
-      // }
 
       if (name === "product_id") {
         const p = products.find((x) => String(x.id) === String(value));
@@ -473,47 +453,16 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
         }
       }
 
-      // When quantity changes, update rate if not manually set
-      // if (
-      //   name === "qty" &&
-      //   useCostMargin &&
-      //   !row.manualRate &&
-      //   row.cost_rate > 0
-      // ) {
-      //   const newRatePerKg = recomputeSellingRate(row);
-      //   row.rate = newRatePerKg;
-      //   row.display_rate = newRatePerKg;
-      // }
-
       if (name === "qty" && useCostMargin && !row.manualRate) {
         const newRate = recomputeSellingRate(row);
         row.rate = newRate;
         row.display_rate = newRate;
       }
 
-      // When display_rate is manually changed, mark as manual rate
-      // if (name === "display_rate") {
-      //   row.manualRate = true;
-      //   row.rate = Number(value) || 0; // Rate is per kg
-      // }
-
       if (name === "display_rate") {
         row.manualRate = true;
         row.rate = Number(value) || 0;
       }
-
-      // When unit changes, update quantity validation (rate stays per kg)
-      // if (name === "unit") {
-      //   const oldUnit = row.unit;
-      //   row.unit = value;
-
-      //   // Convert quantity if it was entered in old unit
-      //   if (row.qty > 0 && oldUnit && oldUnit !== "" && value && value !== "") {
-      //     // Convert qty from old unit to grams, then to new unit
-      //     const qtyInGrams = convertToGrams(row.qty, oldUnit);
-      //     row.qty = convertFromGrams(qtyInGrams, value);
-      //   }
-      // }
 
       if (name === "unit") {
         const oldUnit = row.unit;
@@ -571,6 +520,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
           discount_30: 0,
           discount_50: 0,
           total_50: 0,
+          custom_product_name: "",
         },
       ],
     }));
@@ -607,7 +557,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
       form.items.length > 0 &&
       form.items.every(
         (r) =>
-          Number(r.product_id) > 0 &&
+          (Number(r.product_id) > 0 || (r.custom_product_name && r.custom_product_name.trim() !== "")) &&
           Number(r.qty) > 0 &&
           Number(r.rate) > 0 &&
           r.unit &&
@@ -649,7 +599,8 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
 
       const items = form.items.map((r) => ({
         id: r.id,
-        product_id: Number(r.product_id),
+        product_id: r.product_id ? Number(r.product_id) : null,
+        custom_product_name: r.custom_product_name || "",
         hsn_code: r.hsn_code || "",
         qty: Number(r.qty || 0),
         rate: Number(r.rate || 0), // Rate per kg
@@ -713,6 +664,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
               manualRate: false,
               unit: "",
               product_unit: "",
+              custom_product_name: "",
             },
           ],
         });
@@ -1025,7 +977,16 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
       </div>
 
       {/* Items Table */}
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4 flex justify-between items-center px-2">
+        <h2 className="font-bold text-lg text-gray-800">Items</h2>
+        <button
+          onClick={() => setProductModalOpen(true)}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm shadow transition-colors"
+        >
+          ➕ Add New Product
+        </button>
+      </div>
+      <div className="mt-2 overflow-x-auto">
         <table className="min-w-full border text-xs">
           <thead className="bg-green-700 text-white">
             <tr>
@@ -1076,21 +1037,24 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
 
                   <td className="px-2 py-1 border">
                     <div className="flex gap-1">
-                      <select
+                      <input
+                        list={`product-list-${i}`}
                         className="border rounded p-1 w-44"
-                        name="product_id"
-                        value={it.product_id}
+                        name="product_name_input"
+                        placeholder="Select or type..."
+                        value={
+                          it.product_id
+                            ? products.find((p) => String(p.id) === String(it.product_id))
+                                ?.product_name || ""
+                            : it.custom_product_name || ""
+                        }
                         onChange={(e) => onItem(i, e)}
-                      >
-                        <option value="">Select</option>
-                        {products.map((p) => {
-                          return (
-                            <option key={p.id} value={p.id}>
-                              {p.product_name}
-                            </option>
-                          );
-                        })}
-                      </select>
+                      />
+                      <datalist id={`product-list-${i}`}>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.product_name} />
+                        ))}
+                      </datalist>
                     </div>
                   </td>
 
@@ -1354,6 +1318,12 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
           {isEditMode ? "Update SO" : "Create SO"}
         </button>
       </div>
+
+      <ProductFormModal
+        open={productModalOpen}
+        hide={() => setProductModalOpen(false)}
+        onSuccess={() => loadProducts()}
+      />
     </form>
   );
 }

@@ -4,13 +4,18 @@ const pool = require("../config/db");
 // MARK ATTENDANCE
 // ------------------------------
 function markAttendance(req, res) {
-  const {
+  let {
     employee_id,
     attendenceDate,
     status,
     reason,
     leave_type = "unpaid",
   } = req.body;
+
+  if (status === "present") {
+    reason = "";
+    leave_type = null;
+  }
 
   const isoDate = attendenceDate;
   const sqlDate = new Date(isoDate).toISOString().split("T")[0];

@@ -17,57 +17,17 @@ import { useNavigate } from "react-router-dom";
 // Display helper
 const fx = (n) => (isNaN(n) ? 0 : Number(n));
 
-const getDiscountsFromValue = (value) => ({
-  discount_30: (value * 30) / 100,
-  discount_25: (value * 25) / 100,
-});
-
-// Helper function to convert size to grams
-const convertToGrams = (size, unit) => {
-  const numericValue = Number(size || 0);
-
-  if (numericValue <= 0) return numericValue;
-
-  switch (unit) {
-    case "ton":
-      return numericValue * 1000 * 1000; // 1 ton = 1,000,000 gram
-    case "quantal":
-      return numericValue * 100 * 1000; // 1 quantal = 100 kg = 100,000 gram
-    case "kg":
-      return numericValue * 1000; // 1 kg = 1000 gram
-    case "litter":
-      return numericValue * 1000; // 1 kg = 1000 gram
-    case "gram":
-    default:
-      return numericValue;
-  }
-};
-
-// Helper function to convert grams back to display unit
-const convertFromGrams = (grams, unit) => {
-  const numericValue = Number(grams || 0);
-
-  if (numericValue <= 0) return numericValue;
-
-  switch (unit) {
-    case "ton":
-      return numericValue / (1000 * 1000);
-    case "quantal":
-      return numericValue / (100 * 1000);
-    case "kg":
-      return numericValue / 1000;
-    case "litter":
-      return numericValue / 1000;
-    case "gram":
-    default:
-      return numericValue;
-  }
-};
+import ProductFormModal, { convertToGrams, convertFromGrams } from "../../components/products/ProductFormModal";
 
 export default function Products({ open, hide }) {
   const dispatch = useDispatch();
   const { list: products, loading } = useSelector((state) => state.products);
   const { list: categories } = useSelector((state) => state.categories);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const [filterCategory, setFilterCategory] = useState("");
   const [filterProduct, setFilterProduct] = useState("");
@@ -77,128 +37,7 @@ export default function Products({ open, hide }) {
   const [editProduct, setEditProduct] = useState(null);
   const [viewProduct, setViewProduct] = useState(null);
 
-  const initialForm = {
-    category_id: "",
-    product_name: "",
-    size: "",
-    unit: "",
-    pieces: "",
-    purchase_rate: "",
-    transport_charge: 10,
-    local_transport: 5,
-    packaging_cost: 1.5,
-    hsn_code: "",
-    value: "",
-    discount_30: 0,
-    discount_25: 0,
-    total: "",
-    gst: "",
-    gstAmount: 0,
-  };
-
-  const [formData, setFormData] = useState(initialForm);
-
-  useEffect(() => {
-    dispatch(fetchProducts());
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  // Auto Calculation (VALUE-BASED)
-  useEffect(() => {
-    const purchase = fx(formData.purchase_rate);
-    const transport = fx(formData.transport_charge);
-    const local = fx(formData.local_transport);
-    const packaging = fx(formData.packaging_cost);
-
-    // Value from all landed costs
-    const value = purchase + transport + local + packaging;
-
-    // Discounts/Margins derived from Value
-    const { discount_30, discount_25 } = getDiscountsFromValue(value);
-
-    // Total Sales Rate baseline (no GST here)
-    const salesRate = value * 1.5;
-
-    setFormData((prev) => ({
-      ...prev,
-      value,
-      discount_30,
-      discount_25,
-      total: salesRate,
-      gstAmount: prev.gstAmount ?? 0, // do not auto-calc gstAmount here
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    formData.purchase_rate,
-    formData.transport_charge,
-    formData.local_transport,
-    formData.packaging_cost,
-    // gst intentionally excluded
-  ]);
-
-  useEffect(() => {
-    if (formData?.unit == "box") {
-      setOpenPiecesFields(true);
-    } else {
-      setOpenPiecesFields(false);
-    }
-  }, [formData]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
-
-  const handleAdd = async () => {
-    // Unit required before conversion
-    if (!formData.unit) {
-      alert("Please select the Unit first");
-      return;
-    }
-
-    // Convert size to grams based on unit
-    const gramWeight = convertToGrams(formData.size, formData.unit);
-
-    // Add converted size into a clean request object
-    const finalPayload = {
-      ...formData,
-      size: gramWeight.toString(), // Ensure it's stored as string
-    };
-
-    // Now send converted data to API
-    const resultAction = await dispatch(addProduct(finalPayload));
-
-    if (addProduct.fulfilled.match(resultAction)) {
-      dispatch(fetchProducts());
-    }
-
-    setFormData(initialForm);
-    setOpenForm(false);
-  };
-
-  // Update Product
-  const handleUpdate = () => {
-    if (!editProduct?.id) return;
-
-    // Unit required before conversion
-    if (!formData.unit) {
-      alert("Please select the Unit first");
-      return;
-    }
-
-    // Convert size to grams based on unit (same as in handleAdd)
-    const gramWeight = convertToGrams(formData.size, formData.unit);
-
-    const finalPayload = {
-      ...formData,
-      size: gramWeight.toString(), // Ensure it's stored as string
-    };
-
-    dispatch(updateProduct({ id: editProduct.id, data: finalPayload }));
-    setEditProduct(null);
-    setFormData(initialForm);
-    setOpenForm(false);
-  };
+  // Update Product (handled by ProductFormModal)
 
   // Delete Product (with confirmation)
   const handleDelete = (id) => {
@@ -210,27 +49,6 @@ export default function Products({ open, hide }) {
   const startEdit = (p) => {
     setEditProduct(p);
 
-    // Convert stored grams back to display unit
-    const displaySize = convertFromGrams(p.size, p.unit);
-
-    setFormData({
-      category_id: p.category_id ?? "",
-      product_name: p.product_name ?? "",
-      size: displaySize, // Show converted size for editing
-      purchase_rate: p.purchase_rate ?? "",
-      transport_charge: p.transport_charge ?? 10,
-      local_transport: p.local_transport ?? 5,
-      packaging_cost: p.packaging_cost ?? 1.5,
-      hsn_code: p.hsn_code ?? "",
-      value: p.value ?? "",
-      discount_30: p.discount_30 ?? 0,
-      discount_25: p.discount_25 ?? 0,
-      total: p.total ?? "",
-      gst: p.gst ?? "",
-      gstAmount: p.gstAmount ?? 0,
-      unit: p?.unit || "",
-      pieces: p?.pieces || "",
-    });
     setOpenForm(true);
   };
 
@@ -292,7 +110,6 @@ export default function Products({ open, hide }) {
             <button
               onClick={() => {
                 setEditProduct(null);
-                setFormData(initialForm);
                 setOpenForm(true);
               }}
               className="px-3 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition"
@@ -304,295 +121,18 @@ export default function Products({ open, hide }) {
       </div>
 
       {/* Product Form Modal */}
-      {(openForm || open) && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100 w-11/12 max-w-5xl max-h-[100vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-6 text-gray-700 flex items-center gap-2">
-              {editProduct ? "✏️ Edit Product" : "🛒 Add New Product"}
-            </h2>
-
-            {/* Single Form */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Category */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Category
-                </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Product Name */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="product_name"
-                  value={formData.product_name || ""}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Unit
-                </label>
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select unit</option>
-                  <option value="ton">Ton</option>
-                  <option value="litter">Liter</option>
-                  <option value="quantal">Quintal</option>
-                  <option value="kg">KG</option>
-                  <option value="gram">Gram</option>
-                  <option value="box">Box</option>
-                </select>
-              </div>
-
-              {/* Size */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Quantity (
-                  {formData.unit
-                    ? `in ${formData.unit}`
-                    : "e.g., 5KG, 10KG, 1L"}
-                  )
-                </label>
-                <input
-                  type="number"
-                  name="size"
-                  value={formData.size || ""}
-                  onChange={handleChange}
-                  placeholder={
-                    formData.unit
-                      ? `Enter quantity in ${formData.unit}`
-                      : "Select unit first"
-                  }
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-                <small className="text-gray-500 mt-1">
-                  This will be converted to grams for storage
-                </small>
-              </div>
-
-              {openoPiecesFields && (
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-gray-600">
-                    Pieces in Box
-                  </label>
-                  <input
-                    type="number"
-                    name="pieces"
-                    value={formData.pieces}
-                    onChange={handleChange}
-                    placeholder="Number of pieces in box"
-                    className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              )}
-
-              {/* Purchase Rate */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Purchase Rate
-                </label>
-                <input
-                  type="number"
-                  name="purchase_rate"
-                  value={formData.purchase_rate || ""}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-              </div>
-
-              {/* Transport */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Transport
-                </label>
-                <input
-                  type="number"
-                  name="transport_charge"
-                  value={formData.transport_charge || 10}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-              </div>
-
-              {/* Local Transport */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Local Transport
-                </label>
-                <input
-                  type="number"
-                  name="local_transport"
-                  value={formData.local_transport || 5}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-              </div>
-
-              {/* Packaging */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Packaging Cost
-                </label>
-                <input
-                  type="number"
-                  name="packaging_cost"
-                  value={formData.packaging_cost || 1.5}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-              </div>
-
-              {/* HSN Code */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  HSN Code
-                </label>
-                <input
-                  type="text"
-                  name="hsn_code"
-                  value={formData.hsn_code || ""}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* GST */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  GST %
-                </label>
-                <input
-                  type="number"
-                  name="gst"
-                  value={formData.gst || ""}
-                  onChange={handleChange}
-                  className="border p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                  required
-                  step="0.01"
-                />
-              </div>
-
-              {/* ReadOnly Fields */}
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Value (Landed Cost)
-                </label>
-                <input
-                  type="number"
-                  name="value"
-                  value={formData.value || ""}
-                  readOnly
-                  className="border p-3 rounded-lg bg-gray-100 text-gray-600"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  5KG 30% / Margin
-                </label>
-                <input
-                  type="number"
-                  value={formData.discount_30 || ""}
-                  readOnly
-                  className="border p-3 rounded-lg bg-gray-100 text-gray-600"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  10KG 25% / Margin
-                </label>
-                <input
-                  type="number"
-                  value={formData.discount_25 || ""}
-                  readOnly
-                  className="border p-3 rounded-lg bg-gray-100 text-gray-600"
-                />
-              </div>
-
-              <div className="flex flex-col md:col-span-3">
-                <label className="mb-2 text-sm font-semibold text-gray-600">
-                  Total Sales Rate (Value × 1.5)
-                </label>
-                <input
-                  type="number"
-                  value={formData.total || ""}
-                  readOnly
-                  className="border p-3 rounded-lg bg-gray-100 text-gray-600 font-bold text-lg"
-                />
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="mt-6 flex justify-end gap-4">
-              <button
-                onClick={() => {
-                  setOpenForm(false);
-                  hide(false);
-                  setEditProduct(null);
-                  setFormData(initialForm);
-                }}
-                className="px-6 cursor-pointer py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg transition-colors"
-              >
-                ❌ Cancel
-              </button>
-              {editProduct ? (
-                <button
-                  onClick={handleUpdate}
-                  className="px-6 py-2 cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                >
-                  ✅ Update Product
-                </button>
-              ) : (
-                <button
-                  onClick={handleAdd}
-                  className="px-6 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                >
-                  ➕ Add Product
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductFormModal
+        open={openForm || open}
+        hide={() => {
+          setOpenForm(false);
+          hide && hide(false);
+          setEditProduct(null);
+        }}
+        editProduct={editProduct}
+        onSuccess={() => {
+          // fetchProducts is already called inside modal on success
+        }}
+      />
 
       {/* Products Table */}
       {loading ? (

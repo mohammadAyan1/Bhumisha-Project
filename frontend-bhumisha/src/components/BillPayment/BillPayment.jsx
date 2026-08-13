@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import payBillAPI from "../../axios/payBill";
 import PaymentModal from "../PaymentModal/PaymentModal";
+import PartyPaymentModal from "../PaymentModal/PartyPaymentModal";
 import companyAPI from "../../axios/companyAPI";
 import vendorAPI from "../../axios/vendorsAPI";
 import farmerAPI from "../../axios/farmerAPI";
@@ -27,6 +28,7 @@ const BillPayment = () => {
   });
   const [selectedBill, setSelectedBill] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPartyModal, setShowPartyModal] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [farmers, setFarmers] = useState([]);
@@ -343,12 +345,19 @@ const BillPayment = () => {
             />
           </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <button
               type="submit"
               className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               Apply Filters
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPartyModal(true)}
+              className="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700 transition-colors"
+            >
+              Consolidated Payment
             </button>
           </div>
         </div>
@@ -778,7 +787,21 @@ const BillPayment = () => {
         <PaymentModal
           bill={selectedBill}
           onClose={() => setShowModal(false)}
-          onSuccess={handlePaymentSuccess}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
+
+      {showPartyModal && (
+        <PartyPaymentModal
+          onClose={() => setShowPartyModal(false)}
+          onPaymentSuccess={() => {
+            setShowPartyModal(false);
+            fetchBills();
+          }}
+          companies={companies}
+          vendors={vendors}
+          farmers={farmers}
+          customers={customers}
         />
       )}
     </div>

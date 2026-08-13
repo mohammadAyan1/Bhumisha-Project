@@ -144,14 +144,16 @@ export default function SalaryPage() {
               <InfoCard label="Working Days" value={report.workingDays} />
               <InfoCard label="Sundays" value={report.totalSundays} />
               <InfoCard label="Holidays" value={report.holidays} />
-              <InfoCard label="Absent Days" value={report.absentDays} />
-              <InfoCard label="Unpaid Leave" value={report.leaveUnpaid} />
+              <InfoCard label="1 Day Salary" value={`₹${report.perDaySalary || 0}`} />
+              <InfoCard label="Absent Days" value={`${report.absentDays} (-₹${report.deductAbsent || 0})`} />
+              <InfoCard label="Unpaid Leave" value={`${report.leaveUnpaid} (-₹${report.deductLeaveUnpaid || 0})`} />
               <InfoCard label="Paid Leave" value={report.leavePaid} />
-              <InfoCard label="Half Day (Unpaid)" value={report.halfUnpaid} />
+              <InfoCard label="Half Day (Unpaid)" value={`${report.halfUnpaid} (-₹${report.deductHalfUnpaid || 0})`} />
               <InfoCard label="Half Day (paid)" value={report.halfPaid} />
+              <InfoCard label="Allowances" value={`₹${report.allowanceAmount || report.total_allowances || 0}`} />
 
               <div className="col-span-full mt-3 p-4 bg-indigo-600 text-white rounded-lg text-center font-bold text-lg">
-                Final Salary: ₹{report.finalSalary}
+                Final Salary: ₹{report.finalSalary || report.final_salary}
               </div>
             </div>
 
@@ -208,6 +210,20 @@ export default function SalaryPage() {
                   {report.incentiveRows.map((i, idx) => (
                     <li key={idx}>
                       ₹{i.amount} – {i.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Allowances */}
+            {report.allowanceRows?.length > 0 && (
+              <div className="mt-4">
+                <h5 className="font-semibold mb-1 text-gray-700">Allowances</h5>
+                <ul className="list-disc ml-6 text-sm">
+                  {report.allowanceRows.map((a, idx) => (
+                    <li key={idx}>
+                      ₹{a.amount} – {a.remark || "Allowance"}
                     </li>
                   ))}
                 </ul>

@@ -606,6 +606,28 @@ const purchaseController = {
 
       // 3. INSERT PURCHASE RECORD - COMPANY-SPECIFIC TABLE FIRST
       // =========================================================
+
+      // Handle advance_amount
+      const partyTableForAdvance = party_type === 'vendor' ? 'vendors' : 'farmers';
+      const [partyRow] = await connection.query(`SELECT advance_amount FROM ${partyTableForAdvance} WHERE id = ?`, [resolvedVendorId || resolvedFarmerId]);
+      const advance_amount = partyRow.length ? Number(partyRow[0].advance_amount || 0) : 0;
+      
+      let cash = Number(paid_amount || 0);
+      let advance_applied = 0;
+      
+      if (advance_amount > 0) {
+        const remainingBillAmount = Math.max(0, finalTotalAmount - cash);
+        if (remainingBillAmount > 0) {
+           advance_applied = Math.min(advance_amount, remainingBillAmount);
+           cash += advance_applied;
+           
+           await connection.query(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, resolvedVendorId || resolvedFarmerId]);
+           
+           payment_note = (payment_note ? payment_note + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
+        }
+      }
+      paid_amount = cash;
+
       let insertColumns = [
         "vendor_id",
         "farmer_id",

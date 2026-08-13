@@ -44,14 +44,15 @@ const SalesOrderItem = {
   create: async (data) => {
     const sql = `
     INSERT INTO \`sales_order_items\`
-    (\`sales_order_id\`, \`product_id\`, \`hsn_code\`, \`qty\`, \`rate\`, \`unit\`,
+    (\`sales_order_id\`, \`product_id\`, \`custom_product_name\`, \`hsn_code\`, \`qty\`, \`rate\`, \`unit\`,
      \`amount\`, \`discount_per_qty\`, \`discount_total\`, \`gst_percent\`, \`gst_amount\`,
      \`final_amount\`, \`discount_rate\`, \`status\`, \`buyer_type\`)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
     const values = [
       toNum(data.sales_order_id),
-      toNum(data.product_id),
+      data.product_id ? toNum(data.product_id) : null,
+      data.custom_product_name || null,
       data.hsn_code || "",
       toNum(data.qty),
       toNum(data.rate), // Rate per selected unit
@@ -77,7 +78,8 @@ const SalesOrderItem = {
         soi.\`id\`,
         soi.\`sales_order_id\`,
         soi.\`product_id\`,
-        p.\`product_name\`,
+        soi.\`custom_product_name\`,
+        COALESCE(p.\`product_name\`, soi.\`custom_product_name\`) AS \`product_name\`,
         soi.\`hsn_code\`,
         soi.\`qty\`,
         soi.\`rate\`,
@@ -93,7 +95,7 @@ const SalesOrderItem = {
         soi.\`updated_at\`,
         soi.\`unit\`
       FROM \`sales_order_items\` soi
-      JOIN \`products\` p ON p.\`id\` = soi.\`product_id\`
+      LEFT JOIN \`products\` p ON p.\`id\` = soi.\`product_id\`
       WHERE soi.\`sales_order_id\` = ?
       ORDER BY soi.\`id\` ASC
     `;
@@ -106,6 +108,7 @@ const SalesOrderItem = {
     const sql = `
       UPDATE \`sales_order_items\` SET
         \`product_id\` = ?,
+        \`custom_product_name\` = ?,
         \`hsn_code\` = ?,
         \`qty\` = ?,
         \`rate\` = ?,
@@ -115,7 +118,8 @@ const SalesOrderItem = {
       WHERE \`id\` = ?
     `;
     const values = [
-      toNum(data.product_id),
+      data.product_id ? toNum(data.product_id) : null,
+      data.custom_product_name || null,
       data.hsn_code || "",
       toNum(data.qty),
       toNum(data.rate),

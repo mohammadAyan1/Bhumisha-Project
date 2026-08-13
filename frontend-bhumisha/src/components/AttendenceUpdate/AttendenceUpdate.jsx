@@ -270,13 +270,22 @@ const AttendenceUpdate = () => {
                   {Array.from({ length: Days(month, year) }, (_, i) => {
                     const day = i + 1;
                     const key = formatCellDateKey(day, month, year);
+
+                    let beforeJoin = false;
+                    if (emp.join_date) {
+                      const currentCellDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+                      const joinDateObj = new Date(emp.join_date);
+                      joinDateObj.setHours(0,0,0,0);
+                      beforeJoin = currentCellDate < joinDateObj;
+                    }
+
                     const holiday = holidayMap[key];
                     const sund = isSunday(day, month, year);
                     const future = isFutureDate(day, month, year);
                     const att = getAttendanceStatus(emp.id, day, month, year);
 
-                    // count working days (exclude sunday & holiday)
-                    if (!sund && !holiday) working++;
+                    // count working days (exclude sunday & holiday & before join)
+                    if (!sund && !holiday && !beforeJoin) working++;
                     if (att?.status === "present") present++;
                     else if (att?.status === "absent") absent++;
                     else if (att?.status === "leave") leaves++;
@@ -324,8 +333,8 @@ const AttendenceUpdate = () => {
                       );
                     }
 
-                    // Future date: show empty cell (as requested) except keep checkbox? you asked "kuch bhi na show except sunday and holiday" — so empty
-                    if (future) {
+                    // Future date or Before Join Date: show empty cell
+                    if (future || beforeJoin) {
                       return <td key={key} className="text-center"></td>;
                     }
 

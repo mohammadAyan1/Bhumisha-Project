@@ -35,6 +35,9 @@ exports.login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES }
     );
+
+    console.log(user);
+
     return res.json({
       token,
       user: { id: user.id, username: user.username, full_name: user.full_name },

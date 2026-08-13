@@ -1004,7 +1004,6 @@ const PurchaseBillsTable = () => {
   const [totalCompanies, setTotalCompanies] = useState([]);
   const [purchaseBills, setPurchaseBills] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [totalPurchaseGSTAmount, setTotalPurchaseGSTAmount] = useState(0);
   const [exportLoading, setExportLoading] = useState(false); // Loading state for export
 
   // Filters - Initialize with current month dates
@@ -1043,24 +1042,6 @@ const PurchaseBillsTable = () => {
         try {
           setLoading(true);
           const res = await getAllPurchaseBill.getAll(totalCompanies);
-
-          const companies = res.data || [];
-
-          const totalPurchasesAmount = companies?.reduce((sum, item) => {
-            const totalForEachCompany = item?.purchases?.reduce(
-              (secondSum, secondItem) => {
-                const eachPurchaseTotal = secondItem?.items.reduce((n, b) => {
-                  return n + Number(b?.gst_amount);
-                }, 0);
-                return secondSum + eachPurchaseTotal;
-              },
-              0
-            );
-
-            return sum + totalForEachCompany;
-          }, 0);
-
-          setTotalPurchaseGSTAmount(totalPurchasesAmount);
 
           // Flatten & sanitize data
           const flattened = (res.data || [])
@@ -1407,6 +1388,16 @@ const PurchaseBillsTable = () => {
       (s, b) => s + Number(b?.items[0]?.items[0]?.total_amount || 0),
       0
     );
+  }, [filteredBills]);
+
+  const totalPurchaseGSTAmount = useMemo(() => {
+    return filteredBills.reduce((sum, bill) => {
+      const filterData = bill?.items?.[0]?.items;
+      const eachRowTotalPurchaseGst = filterData?.reduce((s, item) => {
+        return s + Number(item?.gst_amount || 0);
+      }, 0) || 0;
+      return sum + eachRowTotalPurchaseGst;
+    }, 0);
   }, [filteredBills]);
 
   // Sorting: compute displayed (sorted) bills from filteredBills

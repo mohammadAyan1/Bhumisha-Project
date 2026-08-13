@@ -54,7 +54,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const FRONTEND_URL = process.env.FRONTEND_URL || process.env.FRONTEND2_URL;
 const JSON_LIMIT = process.env.JSON_LIMIT || "2mb";
 
-const allowedOrigins = [FRONTEND_URL, FRONTEND3_URL].filter(Boolean);
+const allowedOrigins = [FRONTEND_URL].filter(Boolean);
 
 // CORS config with explicit 403 for unknown origins
 const corsOptions = {
@@ -127,6 +127,9 @@ app.use("/api/sequences", requireAuth, sequencesRoutes);
 app.use("/api/poorderremove", requireAuth, PoOrderroute);
 app.use("/api/allpurchases", requireAuth, AllPurchasesBillRoutes);
 app.use("/api/allsales", requireAuth, AllSalesBillRoutes);
+
+const partyPaymentRoutes = require("./src/routes/partyPayment.routes");
+app.use("/api/party-payment", requireAuth, partyPaymentRoutes);
 
 // app.use("/api/poorderremove", requireAuth, trash);
 

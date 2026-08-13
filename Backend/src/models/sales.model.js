@@ -24,9 +24,9 @@ async function ensureReferenceColumn(conn, tableName) {
                 ALTER TABLE \`${tableName}\`
                 ADD COLUMN reference_id INT NULL,
                 ADD INDEX idx_${tableName.replace(
-                  /[^a-zA-Z0-9_]/g,
-                  "_"
-                )}_reference (reference_id)
+        /[^a-zA-Z0-9_]/g,
+        "_"
+      )}_reference (reference_id)
             `);
     }
   } catch (error) {
@@ -91,18 +91,26 @@ async function ensureTotalDiscountColumn(conn, tableName) {
   }
 }
 
-const Sales = {
-  getConnection: async () => {
-    const conn = await mysql.createConnection({
+let _pool;
+const getConnection = async () => {
+  if (!_pool) {
+    _pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       port: process.env.DB_PORT,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       multipleStatements: false,
+      connectionLimit: 10,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
     });
-    return conn;
-  },
+  }
+  return await _pool.getConnection();
+};
+
+const Sales = {
+  getConnection,
 
   // Generate next bill number like BILL-001, BILL-002 ...
   // getNewBillNo: async (code) => {
@@ -121,7 +129,7 @@ const Sales = {
   //     }
   //     return `BILL-${String(lastNo + 1).padStart(3, "0")}`;
   //   } finally {
-  //     await conn.end();
+  //     if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
   //   }
   // },
 
@@ -160,7 +168,7 @@ const Sales = {
         sequenceNumber
       ).padStart(3, "0")}`;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -191,10 +199,10 @@ const Sales = {
       party_type === "customer"
         ? customer_id
         : party_type === "vendor"
-        ? vendor_id
-        : party_type === "farmer"
-        ? farmer_id
-        : null;
+          ? vendor_id
+          : party_type === "farmer"
+            ? farmer_id
+            : null;
     if (!chosenId) throw new Error(`${party_type}_id is required`);
     if (!Array.isArray(items) || items.length === 0)
       throw new Error("items[] required");
@@ -595,8 +603,26 @@ const Sales = {
         Number(total_amount || 0) +
         Math.max(0, Number(other_amount || 0));
 
-      // Payment insert (any party) - Handle cash payment
-      const cash = Number(cash_received || 0);
+      // Payment insert (any party) - Handle cash payment and advance
+      const partyTableForAdvance = party_type === 'customer' ? 'customers' : (party_type === 'vendor' ? 'vendors' : 'farmers');
+      const [partyRow] = await conn.execute(`SELECT advance_amount FROM ${partyTableForAdvance} WHERE id = ?`, [chosenId]);
+      const advance_amount = partyRow.length ? Number(partyRow[0].advance_amount || 0) : 0;
+
+      let cash = Number(cash_received || 0);
+      let advance_applied = 0;
+      
+      if (advance_amount > 0) {
+        const remainingBillAmount = Math.max(0, finalTotalAmount - cash);
+        if (remainingBillAmount > 0) {
+           advance_applied = Math.min(advance_amount, remainingBillAmount);
+           cash += advance_applied;
+           
+           await conn.execute(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, chosenId]);
+           
+           remarks = (remarks ? remarks + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
+        }
+      }
+
       if (cash > 0) {
         // Insert into COMPANY-SPECIFIC payments table
         const [companyPaymentRes] = await conn.execute(
@@ -698,7 +724,7 @@ const Sales = {
       await conn.rollback();
       throw e;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -730,10 +756,10 @@ const Sales = {
       party_type === "customer"
         ? customer_id
         : party_type === "vendor"
-        ? vendor_id
-        : party_type === "farmer"
-        ? farmer_id
-        : null;
+          ? vendor_id
+          : party_type === "farmer"
+            ? farmer_id
+            : null;
 
     if (!chosenId) throw new Error(`${party_type}_id is required`);
     if (!Array.isArray(items) || items.length === 0)
@@ -742,7 +768,7 @@ const Sales = {
     const finalBillNo = bill_no || existingSale.bill_no;
     /////////////////////!SECTION
 
-    const conn = await db.getConnection();
+    const conn = await Sales.getConnection();
     try {
       await conn.beginTransaction();
 
@@ -1135,7 +1161,7 @@ const Sales = {
       await conn.rollback();
       throw e;
     } finally {
-      if (conn) conn.release();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -1162,7 +1188,7 @@ const Sales = {
       );
       return rows;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -1204,7 +1230,7 @@ const Sales = {
 
       return { ...saleRows[0], items };
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -1228,7 +1254,7 @@ const Sales = {
       await conn.rollback();
       throw e;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -1259,7 +1285,7 @@ const Sales = {
       }
       return rows;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 };

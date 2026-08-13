@@ -164,12 +164,12 @@ CREATE TABLE IF NOT EXISTS company_bank_details (
     // Add FK column if missing (avoid IF NOT EXISTS for broader MySQL compatibility)
     await exec(
       `ALTER TABLE companies ADD COLUMN bank_detail_id INT NULL`
-    ).catch(() => {});
+    ).catch(() => { });
     // Add FK constraint (swallow if already exists)
     await exec(`ALTER TABLE companies
       ADD CONSTRAINT fk_companies_bank_detail
       FOREIGN KEY (bank_detail_id) REFERENCES company_bank_details(id)
-      ON DELETE SET NULL`).catch(() => {});
+      ON DELETE SET NULL`).catch(() => { });
     for (const stmt of DDL_TEMPLATES) {
       await exec(stmt); // run each CREATE separately
     }

@@ -28,6 +28,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { username, password });
+
+      console.log(data, "QWERTYUIOP");
+
       // If using JWT
       login(data.token, data.user, { remember }, () => {
         toast.success("Welcome back!");

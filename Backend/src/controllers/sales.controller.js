@@ -72,10 +72,10 @@ const SalesController = {
         party_type === "customer"
           ? customer_id
           : party_type === "vendor"
-          ? vendor_id
-          : party_type === "farmer"
-          ? farmer_id
-          : null;
+            ? vendor_id
+            : party_type === "farmer"
+              ? farmer_id
+              : null;
       if (!chosenId) {
         return res.status(400).json({ error: `${party_type}_id is required` });
       }
@@ -130,7 +130,7 @@ const SalesController = {
             throw e;
           });
         }
-      } catch {}
+      } catch { }
 
       return res.status(201).json({
         message: "Sale created successfully",
@@ -162,7 +162,7 @@ const SalesController = {
       return res.json(sales);
     } catch (err) {
       console.error("getSales error:", err);
-      return res.status(500).json({ error: "Server Error" });
+      return res.status(500).json({ error: `Server Error ${err}` });
     }
   },
 
@@ -181,7 +181,7 @@ const SalesController = {
       try {
         const company = await Company.getByCode(code);
         if (company) sale.company = company;
-      } catch {}
+      } catch { }
       // items already embedded by model.getById
       return res.json(sale);
     } catch (err) {
@@ -309,10 +309,10 @@ const SalesController = {
         party_type === "customer"
           ? customer_id
           : party_type === "vendor"
-          ? vendor_id
-          : party_type === "farmer"
-          ? farmer_id
-          : null;
+            ? vendor_id
+            : party_type === "farmer"
+              ? farmer_id
+              : null;
 
       if (!chosenId)
         return res.status(400).json({ error: `${party_type}_id is required` });
@@ -469,6 +469,10 @@ const SalesController = {
           const net_total = Number(taxable_amount + gst_amount);
           const unit = item.unit || "kg";
           const productDetails = item.salesProductItemDetails || {};
+
+
+
+
 
           // Insert into COMPANY-SPECIFIC sale_items table
           const [companyItemRes] = await conn.execute(
@@ -737,7 +741,7 @@ const SalesController = {
         console.error("updateSale error:", err);
         return res.status(400).json({ error: err.message || "Server Error" });
       } finally {
-        if (conn) conn.release();
+        if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
       }
     } catch (err) {
       console.error("updateSale error:", err);
@@ -843,7 +847,7 @@ const SalesController = {
         const previous_due = Math.max(total_sales - total_payments, 0);
         return res.json({ previous_due, total_sales, total_payments });
       } finally {
-        await conn.end();
+        if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
       }
     } catch (err) {
       console.error("getPartyPreviousDue error:", err);
@@ -888,7 +892,7 @@ const SalesController = {
 
         res.json(response);
       } finally {
-        await conn.end();
+        if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
       }
     } catch (err) {
       console.error("getFromSO error:", err);

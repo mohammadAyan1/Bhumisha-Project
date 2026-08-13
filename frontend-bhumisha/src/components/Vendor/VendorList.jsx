@@ -968,6 +968,7 @@ export default function VendorList() {
                         Description
                       </th>
                       <th className="px-4 py-2 border-b text-right">Amount</th>
+                      <th className="px-4 py-2 border-b text-right">Paid</th>
                       <th className="px-4 py-2 border-b text-right">Balance</th>
                       <th className="px-4 py-2 border-b text-center">
                         Actions
@@ -976,11 +977,6 @@ export default function VendorList() {
                   </thead>
                   <tbody>
                     {statementData?.rows?.map((row, index) => {
-                      const balancedRow = fetchBalancedRow(
-                        row?.amount,
-                        row?.tx_type
-                      );
-
                       return (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 border-b">
@@ -1013,8 +1009,11 @@ export default function VendorList() {
                             {row.net_effect > 0 ? "+" : ""}₹
                             {Number(Math.abs(row.net_effect) || 0).toFixed(2)}
                           </td>
+                          <td className="px-4 py-2 border-b text-right text-gray-600">
+                            {row.paid_amount > 0 ? `₹${Number(row.paid_amount).toFixed(2)}` : "-"}
+                          </td>
                           <td className="px-4 py-2 border-b text-right">
-                            ₹{Number(balancedRow || 0).toFixed(2)}
+                            ₹{Number(row.running_balance || 0).toFixed(2)}
                           </td>
                           <td className="px-4 py-2 border-b text-center">
                             {row.details_available ? (
@@ -1267,10 +1266,7 @@ export default function VendorList() {
                             <td className="px-4 py-2 border-b">
                               ₹
                               {Number(
-                                item.net_total ||
-                                  item.final_amount ||
-                                  item.total ||
-                                  0
+                                (item.qty || item.size || 0) * (item.rate || 0)
                               ).toFixed(2)}
                             </td>
                           </tr>

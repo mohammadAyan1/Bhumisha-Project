@@ -81,7 +81,7 @@ const getFarmers = (callback) => {
            b.pan_number, b.account_holder_name, b.bank_name, b.account_number, b.ifsc_code, b.branch_name
     FROM farmers f
     LEFT JOIN farmer_bank_details b ON f.id = b.farmer_id
-    ORDER BY f.status, f.id DESC
+    ORDER BY f.status, f.name ASC
   `;
   db.query(query, callback);
 };
@@ -247,16 +247,16 @@ const getFarmerStatement = (
   const openingSql = `
     SELECT
       COALESCE((
-        -- Total sales to farmer (we owe them)
+        -- Total sales to farmer
         (SELECT COALESCE(SUM(s.total_amount), 0) FROM sales s 
-         WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date < ?) +
-        -- Total payments we made to farmer
+         WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date < ?) -
+        -- Total payments we received from farmer
         (SELECT COALESCE(SUM(p.amount), 0) FROM sale_payments p 
          WHERE p.farmer_id = ? AND p.party_type = 'farmer' AND p.payment_date < ?) -
-        -- Total purchases from farmer (they owe us)
+        -- Total purchases from farmer
         (SELECT COALESCE(SUM(pur.total_amount), 0) FROM purchases pur 
-         WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date < ?) -
-        -- Total payments we received from farmer
+         WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date < ?) +
+        -- Total payments we made to farmer
         (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
          WHERE pp.farmer_id = ? AND pp.party_type = 'farmer' AND pp.payment_date < ?)
       ), 0) AS opening_balance
@@ -270,16 +270,18 @@ const getFarmerStatement = (
 
       const openingBalance = openingResult[0]?.opening_balance || 0;
 
-      // Now get all transactions (purchases, sales, and payments) with running balance
+      // Now get all transactions (purchases, sales, and payments) without running balance in SQL
       const sql = `
       SELECT
         DATE_FORMAT(t.tx_datetime, '%Y-%m-%d %H:%i:%s') AS tx_datetime,
+        t.net_effect,
+        t.is_display,
+        t.tx_family,
         t.tx_type,
         t.ref_no,
         t.invoice_id,
         t.amount,
-        t.net_effect,
-        t.running_balance,
+        t.paid_amount,
         t.payment_method,
         t.note,
         t.details_available
@@ -287,12 +289,14 @@ const getFarmerStatement = (
         -- Purchases from farmer (they owe us)
         SELECT
           pur.bill_date AS tx_datetime,
+          -pur.total_amount AS net_effect,
+          1 AS is_display,
+          'PURCHASE' AS tx_family,
           'Purchase' AS tx_type,
           CONCAT('PUR-', pur.id) AS ref_no,
           pur.id AS invoice_id,
           pur.total_amount AS amount,
-          -pur.total_amount AS net_effect,
-          @running_balance := @running_balance - pur.total_amount AS running_balance,
+          (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp WHERE pp.purchases_id = pur.id AND pp.status = 'Active') AS paid_amount,
           pur.payment_method,
           CONCAT('Purchase Invoice #', pur.bill_no) AS note,
           1 AS details_available
@@ -307,12 +311,14 @@ const getFarmerStatement = (
         -- Sales to farmer (we owe them)
         SELECT
           s.bill_date AS tx_datetime,
+          s.total_amount AS net_effect,
+          1 AS is_display,
+          'SALE' AS tx_family,
           'Sale' AS tx_type,
           CONCAT('SAL-', s.id) AS ref_no,
           s.id AS invoice_id,
           s.total_amount AS amount,
-          s.total_amount AS net_effect,
-          @running_balance := @running_balance + s.total_amount AS running_balance,
+          (SELECT COALESCE(SUM(sp.amount), 0) FROM sale_payments sp WHERE sp.sale_id = s.id AND sp.status = 'Active') AS paid_amount,
           s.payment_method,
           CONCAT('Sale Invoice #', s.bill_no) AS note,
           1 AS details_available
@@ -324,15 +330,17 @@ const getFarmerStatement = (
         
         UNION ALL
         
-        -- Payments we made to farmer
+        -- Payments we received from farmer
         SELECT
           p.payment_date AS tx_datetime,
-          'Payment to Farmer' AS tx_type,
-          CONCAT('PAY-', p.id) AS ref_no,
+          -p.amount AS net_effect,
+          0 AS is_display,
+          'SALE' AS tx_family,
+          'Payment from Farmer' AS tx_type,
+          CONCAT('REC-', p.id) AS ref_no,
           p.sale_id AS invoice_id,
           p.amount AS amount,
-          -p.amount AS net_effect,
-          @running_balance := @running_balance - p.amount AS running_balance,
+          0 AS paid_amount,
           p.method AS payment_method,
           p.remarks AS note,
           0 AS details_available
@@ -343,15 +351,17 @@ const getFarmerStatement = (
         
         UNION ALL
         
-        -- Payments we received from farmer
+        -- Payments we made to farmer
         SELECT
           pp.payment_date AS tx_datetime,
-          'Payment from Farmer' AS tx_type,
-          CONCAT('REC-', pp.id) AS ref_no,
+          pp.amount AS net_effect,
+          0 AS is_display,
+          'PURCHASE' AS tx_family,
+          'Payment to Farmer' AS tx_type,
+          CONCAT('PAY-', pp.id) AS ref_no,
           pp.purchases_id AS invoice_id,
           pp.amount AS amount,
-          pp.amount AS net_effect,
-          @running_balance := @running_balance + pp.amount AS running_balance,
+          0 AS paid_amount,
           pp.method AS payment_method,
           pp.remarks AS note,
           0 AS details_available
@@ -360,17 +370,12 @@ const getFarmerStatement = (
           AND pp.party_type = 'farmer' 
           AND pp.payment_date BETWEEN ? AND ?
       ) t
-      ORDER BY t.tx_datetime ${sort === "desc" ? "DESC" : "ASC"}
-      LIMIT ? OFFSET ?
+      ORDER BY t.tx_datetime ${sort === "desc" ? "DESC, t.tx_family DESC, t.invoice_id DESC, t.is_display DESC" : "ASC, t.tx_family ASC, t.invoice_id ASC, t.is_display ASC"}
     `;
 
-      // Initialize running balance variable with opening balance
-      db.query(`SET @running_balance = ${openingBalance}`, (err) => {
-        if (err) return callback(err);
-
-        db.query(
-          sql,
-          [
+      db.query(
+        sql,
+        [
             farmerId,
             from,
             to, // purchases
@@ -383,11 +388,22 @@ const getFarmerStatement = (
             farmerId,
             from,
             to, // payments from farmer
-            limit,
-            offset,
           ],
           (err, rows) => {
             if (err) return callback(err);
+
+            // Calculate running balance
+            let runningBalance = Number(openingBalance) || 0;
+            const allRowsWithBalance = rows.map(row => {
+              runningBalance += Number(row.net_effect) || 0;
+              return {
+                ...row,
+                running_balance: runningBalance
+              };
+            });
+            
+            // Pagination
+            const paginatedRows = allRowsWithBalance.slice(offset, offset + limit);
 
             // Get totals for summary
             const totalsSql = `
@@ -415,12 +431,12 @@ const getFarmerStatement = (
                              
  
                 -- Total payments made to farmer
-                (SELECT COALESCE(SUM(p.amount), 0) FROM sale_payments p 
-                 WHERE p.farmer_id = ? AND p.party_type = 'farmer' AND p.payment_date <= ?) AS total_payments_to_farmer,
+                (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
+                 WHERE pp.farmer_id = ? AND pp.party_type = 'farmer' AND pp.payment_date <= ?) AS total_payments_to_farmer,
                  
                 -- Total payments received from farmer
-                (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
-                 WHERE pp.farmer_id = ? AND pp.party_type = 'farmer' AND pp.payment_date <= ?) AS total_payments_from_farmer,
+                (SELECT COALESCE(SUM(p.amount), 0) FROM sale_payments p 
+                 WHERE p.farmer_id = ? AND p.party_type = 'farmer' AND p.payment_date <= ?) AS total_payments_from_farmer,
                  
                 -- Opening balance (already calculated)
                 ? AS opening_balance,
@@ -428,11 +444,11 @@ const getFarmerStatement = (
                 -- Current outstanding balance
                 (
                   (SELECT COALESCE(SUM(s.total_amount), 0) FROM sales s 
-                   WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date <= ?) +
+                   WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date <= ?) -
                   (SELECT COALESCE(SUM(p.amount), 0) FROM sale_payments p 
                    WHERE p.farmer_id = ? AND p.party_type = 'farmer' AND p.payment_date <= ?) -
                   (SELECT COALESCE(SUM(pur.total_amount), 0) FROM purchases pur 
-                   WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) -
+                   WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) +
                   (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
                    WHERE pp.farmer_id = ? AND pp.party_type = 'farmer' AND pp.payment_date <= ?)
                 ) AS outstanding_balance,
@@ -440,11 +456,11 @@ const getFarmerStatement = (
                 -- Closing balance (same as outstanding balance)
                 (
                   (SELECT COALESCE(SUM(s.total_amount), 0) FROM sales s 
-                   WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date <= ?) +
+                   WHERE s.farmer_id = ? AND s.status = 'Active' AND s.bill_date <= ?) -
                   (SELECT COALESCE(SUM(p.amount), 0) FROM sale_payments p 
                    WHERE p.farmer_id = ? AND p.party_type = 'farmer' AND p.payment_date <= ?) -
                   (SELECT COALESCE(SUM(pur.total_amount), 0) FROM purchases pur 
-                   WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) -
+                   WHERE pur.farmer_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) +
                   (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
                    WHERE pp.farmer_id = ? AND pp.party_type = 'farmer' AND pp.payment_date <= ?)
                 ) AS closing_balance
@@ -493,7 +509,7 @@ const getFarmerStatement = (
                 if (err2) return callback(err2);
 
                 callback(null, {
-                  rows,
+                  rows: paginatedRows,
                   totals: totals[0] || {},
                   opening_balance: openingBalance,
                 });
@@ -501,7 +517,6 @@ const getFarmerStatement = (
             );
           }
         );
-      });
     }
   );
 };

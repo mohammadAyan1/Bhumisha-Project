@@ -603,9 +603,7 @@ const allExpenses = {
         }
 
         const totalAmount = result.reduce((sum, item) => {
-          return (
-            sum + Number(item?.total_amount) + Number(item?.total_gst_amount)
-          );
+          return sum + Number(item?.total_gst_amount);
         }, 0);
 
         return res.json({ success: true, data: result, total: totalAmount });

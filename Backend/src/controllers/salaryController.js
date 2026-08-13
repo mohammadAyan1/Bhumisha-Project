@@ -112,12 +112,22 @@ async function generateSalaryByMe(req, res) {
 
       todayDayFromGivenDate = totalDaysFromGivenDate;
     }
+    // ---------------- EFFECTIVE START DATE ----------------
+    let jdObj = emp.join_date;
+    if (typeof jdObj === "string") {
+      jdObj = new Date(jdObj);
+    }
+    const joinDateISO = jdObj.toISOString().split("T")[0];
+    let effectiveStartDate = finalDate;
+    if (new Date(finalDate) < new Date(joinDateISO)) {
+      effectiveStartDate = joinDateISO;
+    }
 
     // ---------------- GET HOLIDAYS ----------------
     const holidayRows = await queryAsync(
       `SELECT * FROM holidays
        WHERE holiday_date BETWEEN ? AND ?`,
-      [finalDate, makeConditionTrue ? myCurrectCondition : toDate]
+      [effectiveStartDate, makeConditionTrue ? myCurrectCondition : toDate]
     );
 
     const holidayDates = holidayRows.map((h) => {
@@ -129,7 +139,7 @@ async function generateSalaryByMe(req, res) {
       `SELECT * FROM attendance
        WHERE employee_id=? AND date BETWEEN ? AND ?
        ORDER BY date ASC`,
-      [employee_id, finalDate, makeConditionTrue ? myCurrectCondition : toDate]
+      [employee_id, effectiveStartDate, makeConditionTrue ? myCurrectCondition : toDate]
     );
 
     // ---------------- COUNT SUNDAYS ----------------
@@ -145,15 +155,13 @@ async function generateSalaryByMe(req, res) {
     }
 
     const totalSundays = getSundays(
-      finalDate,
+      effectiveStartDate,
       makeConditionTrue ? myCurrectCondition : toDate
     );
 
     // ---------------- TOTAL DAYS RANGE ----------------
-    const d1 = new Date(finalDate);
-    const d2 = new Date(makeConditionTrue ? myCurrectCondition : salaryEndDate);
-    // const totalDays = (d2 - d1) / (1000 * 60 * 60 * 24) + 1;
-    // FIX: salary cycle should end one day before the selected salary date
+    const dCycleStart = new Date(finalDate);
+    const dEffectiveStart = new Date(effectiveStartDate);
     let adjustedEnd = new Date(
       makeConditionTrue ? myCurrectCondition : salaryEndDate
     );
@@ -162,14 +170,25 @@ async function generateSalaryByMe(req, res) {
       adjustedEnd.setDate(adjustedEnd.getDate() - 1);
     }
 
-    // if user selects same salary day (like 10), reduce one day
     if (sendingDay === salaryDay) {
       adjustedEnd.setDate(adjustedEnd.getDate() - 1);
-      todayDayFromGivenDate = todayDayFromGivenDate - 1;
     }
 
-    const totalDays =
-      Math.floor((adjustedEnd - d1) / (1000 * 60 * 60 * 24)) + 1;
+    // Cycle days for per day salary calculation
+    const cycleDays = Math.floor((adjustedEnd - dCycleStart) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Active days for this employee in this cycle
+    let totalDays = Math.floor((adjustedEnd - dEffectiveStart) / (1000 * 60 * 60 * 24)) + 1;
+    if (totalDays < 0) totalDays = 0;
+
+    // Recalculate todayDayFromGivenDate based on effective start date
+    const dToDate = new Date(toDate);
+    let effectiveTodayDay = Math.floor((dToDate - dEffectiveStart) / (1000 * 60 * 60 * 24)) + 1;
+    if (sendingDay === salaryDay) {
+      effectiveTodayDay = effectiveTodayDay - 1;
+    }
+    if (effectiveTodayDay < 0) effectiveTodayDay = 0;
+    todayDayFromGivenDate = effectiveTodayDay;
 
     // ---------------- WORKING DAYS ----------------
     const workingDays = totalDays - totalSundays - holidayDates.length;
@@ -200,7 +219,7 @@ async function generateSalaryByMe(req, res) {
     });
 
     // ---------------- PER DAY SALARY ----------------
-    const perDaySalary = baseSalary / totalDays;
+    const perDaySalary = baseSalary / cycleDays;
 
     // ---------------- SALARY DEDUCTIONS ----------------
     const deductAbsent = absentDays * perDaySalary;
@@ -231,15 +250,31 @@ async function generateSalaryByMe(req, res) {
       ]);
     }
 
+    // ---------------- ALLOWANCE FETCH ----------------
+    const allowanceRows = await queryAsync(
+      `SELECT * FROM expenses
+       WHERE expenses_for='emp' AND expenses_type='allowance' AND master=? 
+       AND expense_date BETWEEN ? AND ?`,
+      [employee_id, effectiveStartDate, makeConditionTrue ? myCurrectCondition : toDate]
+    );
+
+    let allowanceAmount = 0;
+    if (allowanceRows.length > 0) {
+      allowanceAmount = allowanceRows.reduce(
+        (sum, item) => sum + Number(item.amount),
+        0
+      );
+    }
+
     // ---------------- FINAL SALARY ----------------
     const salaryBeforeDeduction = todayDayFromGivenDate * perDaySalary;
     const finalSalary =
-      salaryBeforeDeduction - totalDeduction + incentiveAmount;
+      salaryBeforeDeduction - totalDeduction + incentiveAmount + allowanceAmount;
 
     return res.json({
       success: true,
       data: {
-        finalDate,
+        finalDate: effectiveStartDate,
         // toDate: makeConditionTrue ? myCurrectCondition : toDate,
         toDate,
         totalDays,
@@ -258,12 +293,17 @@ async function generateSalaryByMe(req, res) {
         perDaySalary: perDaySalary.toFixed(2),
         salaryBeforeDeduction: salaryBeforeDeduction.toFixed(2),
         totalDeduction: totalDeduction.toFixed(2),
+        deductAbsent: deductAbsent.toFixed(2),
+        deductLeaveUnpaid: deductLeaveUnpaid.toFixed(2),
+        deductHalfUnpaid: deductHalfUnpaid.toFixed(2),
         incentiveAmount,
+        allowanceAmount,
         finalSalary: finalSalary.toFixed(2),
 
         attendanceRows,
         holidayDates,
         incentiveRows,
+        allowanceRows,
       },
     });
   } catch (error) {
@@ -314,26 +354,42 @@ function getSalaryReport(req, res) {
                 endDate
               );
 
-              return res.json({
-                success: true,
-                result: {
-                  daysInMonth: calc.daysInMonth,
-                  perDay: Number(
-                    (
-                      Number(emp.base_salary || 0) /
-                      (new Date(endDate).getDate() || 30)
-                    ).toFixed(2)
-                  ),
-                  todayDayFromGivenDate,
-                  total_deduction: calc.totalDeduction,
-                  total_incentives: salary.total_incentives,
-                  final_salary: calc.finalSalary,
-                  attendanceRecords: calc.attendanceBreakdown,
-                  grossAmount: calc.grossAmount,
-                  startDate,
-                  endDate,
-                },
-              });
+              // fetch allowances
+              pool.query(
+                "SELECT * FROM expenses WHERE expenses_for='emp' AND expenses_type='allowance' AND master=? AND expense_date BETWEEN ? AND ?",
+                [id, startDate, endDate],
+                (err4, allowanceRows) => {
+                  if (err4) return res.status(500).json({ error: err4.message });
+
+                  let allowanceAmount = 0;
+                  if (allowanceRows && allowanceRows.length > 0) {
+                    allowanceAmount = allowanceRows.reduce((sum, item) => sum + Number(item.amount), 0);
+                  }
+
+                  return res.json({
+                    success: true,
+                    result: {
+                      daysInMonth: calc.daysInMonth,
+                      perDay: Number(
+                        (
+                          Number(emp.base_salary || 0) /
+                          (new Date(endDate).getDate() || 30)
+                        ).toFixed(2)
+                      ),
+                      todayDayFromGivenDate: typeof todayDayFromGivenDate !== 'undefined' ? todayDayFromGivenDate : 0,
+                      total_deduction: calc.totalDeduction,
+                      total_incentives: salary.total_incentives,
+                      total_allowances: allowanceAmount,
+                      final_salary: calc.finalSalary + allowanceAmount,
+                      attendanceRecords: calc.attendanceBreakdown,
+                      allowanceRows: allowanceRows,
+                      grossAmount: calc.grossAmount,
+                      startDate,
+                      endDate,
+                    },
+                  });
+                }
+              );
             }
           );
         }

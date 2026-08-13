@@ -8,6 +8,7 @@ import vendorAPI from "../../axios/vendorsAPI";
 import farmerAPI from "../../axios/farmerAPI";
 import productsAPI from "../../axios/productAPI";
 import { useNavigate } from "react-router-dom";
+import ProductFormModal from "../products/ProductFormModal.jsx";
 
 // Unit conversion constants (to grams)
 const UNIT_CONVERSIONS = {
@@ -149,6 +150,30 @@ export default function SalesForm({
 
   const useCostMargin = true;
   const comapanyName = localStorage.getItem("company_code") || "";
+  const [productModalOpen, setProductModalOpen] = useState(false);
+
+  const loadProducts = async () => {
+    try {
+      const prodRes = await productsAPI.getAll();
+      const normalized = (prodRes?.data || []).map((p) => ({
+        id: p.id,
+        product_name: p.product_name,
+        hsn_code: p.hsn_code || "",
+        available_grams: Number(p.size || 0),
+        cost_rate: Number(p.value ?? p.total ?? 0),
+        gst_percent: parseGst(p.gst),
+        discount_25: Number(p.discount_25 || 0),
+        discount_30: Number(p.discount_30 || 0),
+        discount_50: Number(p.discount_50 || 0),
+        total_50: Number(p.total || 0),
+        unit: p.unit || "kg",
+        raw: p,
+      }));
+      setProducts(normalized);
+    } catch (error) {
+      console.error("Failed to load products:", error);
+    }
+  };
 
   // Read so query param
   const location = useLocation();
@@ -924,8 +949,8 @@ export default function SalesForm({
         customer_id: "",
         farmer_id: "",
         address: v?.address || "",
-        mobile_no: v?.contact_number || "",
-        gst_no: v?.gst_no || "",
+        mobile_no: v?.contact_number || v?.phone || "",
+        gst_no: v?.GST_No || v?.gst_no || "",
         party_balance: Number(v?.balance ?? 0),
         party_min_balance: Number(v?.min_balance ?? 0),
         old_remaining: 0,
@@ -950,9 +975,9 @@ export default function SalesForm({
         farmer_id: id,
         customer_id: "",
         vendor_id: "",
-        address: "",
-        mobile_no: f?.contact_number || "",
-        gst_no: "",
+        address: f?.village || f?.address || "",
+        mobile_no: f?.contact_number || f?.phone || "",
+        gst_no: f?.GST_No || f?.gst_no || "",
         party_balance: Number(f?.balance ?? 0),
         party_min_balance: Number(f?.min_balance ?? 0),
         old_remaining: 0,
@@ -1824,7 +1849,17 @@ export default function SalesForm({
       </div>
 
       {/* Items Table */}
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4 flex justify-between items-center px-2">
+        <h2 className="font-bold text-lg text-gray-800">Items</h2>
+        <button
+          type="button"
+          onClick={() => setProductModalOpen(true)}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm shadow transition-colors"
+        >
+          ➕ Add New Product
+        </button>
+      </div>
+      <div className="mt-2 overflow-x-auto">
         <table className="min-w-full border text-xs">
           <thead>
             <tr className="bg-green-700 text-white">
@@ -2147,6 +2182,11 @@ export default function SalesForm({
           </button>
         </div>
       </div>
+      <ProductFormModal
+        open={productModalOpen}
+        hide={() => setProductModalOpen(false)}
+        onSuccess={() => loadProducts()}
+      />
     </form>
   );
 }

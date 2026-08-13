@@ -835,6 +835,7 @@ export default function FarmerList({ onEdit }) {
                         Description
                       </th>
                       <th className="px-4 py-2 border-b text-right">Amount</th>
+                      <th className="px-4 py-2 border-b text-right">Paid</th>
                       <th className="px-4 py-2 border-b text-right">Balance</th>
                       <th className="px-4 py-2 border-b text-center">
                         Actions
@@ -851,16 +852,7 @@ export default function FarmerList({ onEdit }) {
                           )
                       )
                       .map((row, index, filteredRows) => {
-                        // Calculate running balance
-                        let balance = 0;
-                        for (let i = 0; i <= index; i++) {
-                          const item = filteredRows[i];
-                          if (item?.tx_type === "Purchase") {
-                            balance -= Number(item.amount || 0);
-                          } else {
-                            balance += Number(item.amount || 0);
-                          }
-                        }
+                        // Use backend running_balance
 
                         return (
                           <tr key={index} className="hover:bg-gray-50">
@@ -894,8 +886,11 @@ export default function FarmerList({ onEdit }) {
                               {row.net_effect > 0 ? "+" : ""}₹
                               {Number(Math.abs(row.net_effect) || 0).toFixed(2)}
                             </td>
+                            <td className="px-4 py-2 border-b text-right text-gray-600">
+                              {row.paid_amount > 0 ? `₹${Number(row.paid_amount).toFixed(2)}` : "-"}
+                            </td>
                             <td className="px-4 py-2 border-b text-right">
-                              ₹{Number(balance || 0).toFixed(2)}
+                              ₹{Number(row.running_balance || 0).toFixed(2)}
                             </td>
                             <td className="px-4 py-2 border-b text-center">
                               {row.details_available ? (
@@ -1081,10 +1076,7 @@ export default function FarmerList({ onEdit }) {
                             <td className="px-4 py-2 border-b">
                               ₹
                               {Number(
-                                item.net_total ||
-                                  item.final_amount ||
-                                  item.total ||
-                                  0
+                                (item.qty || item.size || 0) * (item.rate || 0)
                               ).toFixed(2)}
                             </td>
                           </tr>

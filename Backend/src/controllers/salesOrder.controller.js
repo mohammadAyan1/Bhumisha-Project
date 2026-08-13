@@ -222,6 +222,7 @@ const salesOrderController = {
         const data = {
           sales_order_id,
           product_id: Number(raw.product_id),
+          custom_product_name: raw.custom_product_name || "",
           hsn_code: raw.hsn_code || "",
           qty: Number(raw.qty || 0),
           rate: Number(raw.rate || 0), // Rate per unit (ton/kg/etc)
@@ -450,16 +451,24 @@ const salesOrderController = {
 
       // Delete all existing items and recreate
       await SalesOrderItem.deleteBySOId(id);
-      for (const { raw } of computed) {
+      for (const { raw, calc } of computed) {
         const data = {
           sales_order_id: id,
           product_id: Number(raw.product_id),
+          custom_product_name: raw.custom_product_name || "",
           hsn_code: raw.hsn_code || "",
           qty: Number(raw.qty || 0),
           rate: Number(raw.rate || 0),
+          unit: raw.unit || "kg",
+          amount: calc.amount,
           discount_per_qty: Number(raw.discount_per_qty || 0),
+          discount_total: calc.discount_total,
+          discount_rate: calc.discount_total,
           gst_percent: Number(raw.gst_percent || 0),
+          gst_amount: calc.gst_amount,
+          final_amount: calc.final_amount,
           status: raw.status || "Active",
+          buyer_type: buyer_type?.toLowerCase() || "retailer",
         };
         await SalesOrderItem.create(data);
       }

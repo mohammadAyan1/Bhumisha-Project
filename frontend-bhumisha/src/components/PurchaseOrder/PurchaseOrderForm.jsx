@@ -10,6 +10,7 @@ import {
 // If farmers Redux slice exists:
 import { fetchFarmers } from "../../features/farmers/farmerSlice";
 import Swal from "sweetalert2";
+import ProductFormModal from "../products/ProductFormModal.jsx";
 
 const fx = (n, d = 2) => (isNaN(n) ? "0.00" : Number(n).toFixed(d));
 
@@ -137,6 +138,8 @@ const PurchaseOrderForm = ({ purchaseOrder, onSubmitted }) => {
       unit: "",
     },
   ]);
+
+  const [productModalOpen, setProductModalOpen] = useState(false);
 
   // Load masters + default date/time
   useEffect(() => {
@@ -636,7 +639,17 @@ const PurchaseOrderForm = ({ purchaseOrder, onSubmitted }) => {
       </div>
 
       {/* Items */}
-      <div>
+      <div className="flex justify-between items-center mb-2 px-2 mt-4">
+        <h2 className="font-bold text-lg text-gray-800">Items</h2>
+        <button
+          type="button"
+          onClick={() => setProductModalOpen(true)}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm shadow transition-colors"
+        >
+          ➕ Add New Product
+        </button>
+      </div>
+      <div className="overflow-x-auto">
         <table className="text-sm border min-w-[1600px]">
           <thead className="bg-green-700 text-white">
             <tr>
@@ -850,6 +863,12 @@ const PurchaseOrderForm = ({ purchaseOrder, onSubmitted }) => {
             : "Create PO"}
         </button>
       </div>
+      
+      <ProductFormModal
+        open={productModalOpen}
+        hide={() => setProductModalOpen(false)}
+        onSuccess={() => dispatch(fetchProducts())}
+      />
     </form>
     // </div>
   );

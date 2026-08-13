@@ -2,17 +2,26 @@
 const db = require('../config/db');
 const mysql = require('mysql2/promise');
 
-const SaleItems = {
-  getConnection: async () => {
-    const conn = await mysql.createConnection({
+let _pool;
+const getConnection = async () => {
+  if (!_pool) {
+    _pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       port: process.env.DB_PORT,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
+      multipleStatements: false,
+      connectionLimit: 10,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
     });
-    return conn;
-  },
+  }
+  return await _pool.getConnection();
+};
+
+const SaleItems = {
+  getConnection,
 
   createBulk: async (sale_id, items = []) => {
     if (!sale_id || !Array.isArray(items) || !items.length) {
@@ -80,7 +89,7 @@ const SaleItems = {
       await conn.rollback();
       throw e;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -97,7 +106,7 @@ const SaleItems = {
       );
       return rows;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 
@@ -107,7 +116,7 @@ const SaleItems = {
       const [res] = await conn.execute('DELETE FROM sale_items WHERE sale_id=?', [sale_id]);
       return res.affectedRows;
     } finally {
-      await conn.end();
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
     }
   },
 };

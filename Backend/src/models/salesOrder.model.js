@@ -78,7 +78,8 @@ const SalesOrder = {
 
         soi.id          AS item_id,
         soi.product_id,
-        p.product_name,
+        soi.custom_product_name,
+        COALESCE(p.product_name, soi.custom_product_name) AS product_name,
         soi.hsn_code,
         soi.qty,
         soi.rate,
@@ -96,7 +97,7 @@ const SalesOrder = {
       LEFT JOIN vendors v ON v.id = so.party_id AND so.party_type = 'Vendor'
       LEFT JOIN farmers f ON f.id = so.party_id AND so.party_type = 'Farmer'
       JOIN sales_order_items soi ON soi.sales_order_id = so.id
-      JOIN products p ON p.id = soi.product_id
+      LEFT JOIN products p ON p.id = soi.product_id
       WHERE (
         so.status IS NULL OR (so.status <> 'Inactive' AND so.status <> 'Completed' AND so.status <> 'Cancelled')
       )

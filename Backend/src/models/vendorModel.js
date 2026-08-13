@@ -82,7 +82,7 @@ const getVendors = (callback) => {
       b.pan_number, b.account_holder_name, b.bank_name, b.account_number, b.ifsc_code, b.branch_name
     FROM vendors v
     LEFT JOIN vendor_bank_details b ON v.id = b.vendor_id
-    ORDER BY v.status, v.created_at DESC
+    ORDER BY v.status, COALESCE(NULLIF(v.firm_name, ''), v.vendor_name) ASC
   `;
   db.query(query, callback);
 };
@@ -181,13 +181,13 @@ const getVendorStatement = (
       COALESCE((
         -- Total purchases from vendor (we owe them)
         (SELECT COALESCE(SUM(pur.total_amount), 0) FROM purchases pur
-         WHERE pur.vendor_id = ? AND pur.status = 'Active' AND pur.bill_date < ?) +
+         WHERE pur.vendor_id = ? AND pur.status = 'Active' AND pur.bill_date < ?) -
         -- Total payments we made to vendor
         (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp
          WHERE pp.vendor_id = ? AND pp.party_type = 'vendor' AND pp.payment_date < ?) -
         -- Total sales to vendor (they owe us) - vendors can also be customers
         (SELECT COALESCE(SUM(s.total_amount), 0) FROM sales s
-         WHERE s.vendor_id = ? AND s.status = 'Active' AND s.bill_date < ?) -
+         WHERE s.vendor_id = ? AND s.status = 'Active' AND s.bill_date < ?) +
         -- Total payments we received from vendor (when they buy from us)
         (SELECT COALESCE(SUM(sp.amount), 0) FROM sale_payments sp
          WHERE sp.vendor_id = ? AND sp.party_type = 'vendor' AND sp.payment_date < ?)
@@ -208,10 +208,12 @@ const getVendorStatement = (
           tx_datetime,
           net_effect,
           is_display,
+          tx_family,
           tx_type,
           ref_no,
           invoice_id,
           amount,
+          paid_amount,
           payment_method,
           note,
           details_available
@@ -221,10 +223,12 @@ const getVendorStatement = (
             pur.bill_date AS tx_datetime,
             pur.total_amount AS net_effect,
             1 as is_display,
+            'PURCHASE' AS tx_family,
             'Purchase' AS tx_type,
             CONCAT('PUR-', pur.id) AS ref_no,
             pur.id AS invoice_id,
             pur.total_amount AS amount,
+            (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp WHERE pp.purchases_id = pur.id AND pp.status = 'Active') AS paid_amount,
             pur.payment_method,
             CONCAT('Purchase Invoice #', pur.bill_no) AS note,
             1 AS details_available
@@ -241,10 +245,12 @@ const getVendorStatement = (
             s.bill_date AS tx_datetime,
             -s.total_amount AS net_effect,
             1 as is_display,
+            'SALE' AS tx_family,
             'Sale' AS tx_type,
             CONCAT('SAL-', s.id) AS ref_no,
             s.id AS invoice_id,
             s.total_amount AS amount,
+            (SELECT COALESCE(SUM(sp.amount), 0) FROM sale_payments sp WHERE sp.sale_id = s.id AND sp.status = 'Active') AS paid_amount,
             s.payment_method,
             CONCAT('Sale Invoice #', s.bill_no) AS note,
             1 AS details_available
@@ -261,10 +267,12 @@ const getVendorStatement = (
             pp.payment_date AS tx_datetime,
             -pp.amount AS net_effect,
             0 as is_display,
+            'PURCHASE' AS tx_family,
             'Payment to Vendor' AS tx_type,
             CONCAT('PAY-', pp.id) AS ref_no,
             pp.purchases_id AS invoice_id,
             pp.amount AS amount,
+            0 AS paid_amount,
             pp.method AS payment_method,
             pp.remarks AS note,
             0 AS details_available
@@ -280,10 +288,12 @@ const getVendorStatement = (
             sp.payment_date AS tx_datetime,
             sp.amount AS net_effect,
             0 as is_display,
+            'SALE' AS tx_family,
             'Payment from Vendor' AS tx_type,
             CONCAT('REC-', sp.id) AS ref_no,
             sp.sale_id AS invoice_id,
             sp.amount AS amount,
+            0 AS paid_amount,
             sp.method AS payment_method,
             sp.remarks AS note,
             0 AS details_available
@@ -292,7 +302,7 @@ const getVendorStatement = (
             AND sp.party_type = 'vendor' 
             AND sp.payment_date BETWEEN ? AND ?
         ) all_tx
-        ORDER BY tx_datetime ${sort === "desc" ? "DESC" : "ASC"}
+        ORDER BY tx_datetime ${sort === "desc" ? "DESC, tx_family DESC, invoice_id DESC, is_display DESC" : "ASC, tx_family ASC, invoice_id ASC, is_display ASC"}
       `;
 
       db.query(
@@ -315,9 +325,9 @@ const getVendorStatement = (
           if (err) return callback(err);
 
           // Calculate running balance for all transactions
-          let runningBalance = openingBalance;
+          let runningBalance = Number(openingBalance) || 0;
           const allRowsWithBalance = allRows.map((row) => {
-            runningBalance += parseFloat(row.net_effect) || 0;
+            runningBalance += Number(row.net_effect) || 0;
             return {
               ...row,
               running_balance: runningBalance,
@@ -367,11 +377,11 @@ const getVendorStatement = (
               -- Current outstanding balance
               (
                 (SELECT COALESCE(SUM(pur.total_amount), 0) FROM purchases pur 
-                 WHERE pur.vendor_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) +
+                 WHERE pur.vendor_id = ? AND pur.status = 'Active' AND pur.bill_date <= ?) -
                 (SELECT COALESCE(SUM(pp.amount), 0) FROM purchase_payments pp 
                  WHERE pp.vendor_id = ? AND pp.party_type = 'vendor' AND pp.payment_date <= ?) -
                 (SELECT COALESCE(SUM(s.total_amount), 0) FROM sales s 
-                 WHERE s.vendor_id = ? AND s.status = 'Active' AND s.bill_date <= ?) -
+                 WHERE s.vendor_id = ? AND s.status = 'Active' AND s.bill_date <= ?) +
                 (SELECT COALESCE(SUM(sp.amount), 0) FROM sale_payments sp 
                  WHERE sp.vendor_id = ? AND sp.party_type = 'vendor' AND sp.payment_date <= ?)
               ) AS outstanding_balance

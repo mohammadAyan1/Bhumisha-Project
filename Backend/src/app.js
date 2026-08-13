@@ -213,6 +213,9 @@ app.use("/api/salary", requireAuth, salaryRoutes);
 app.use("/api/bills", requireAuth, billPaymentRoutes);
 app.use("/api/balance-sheet", requireAuth, balanceSheetRoutes);
 
+const partyPaymentRoutes = require("./routes/partyPayment.routes");
+app.use("/api/party-payment", requireAuth, partyPaymentRoutes);
+
 app.use(
   "/api/public/uploads",
   express.static(path.join(__dirname, "public", "uploads"))

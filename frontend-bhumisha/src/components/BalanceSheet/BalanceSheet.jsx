@@ -1596,10 +1596,26 @@ const BalanceSheet = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-sm text-green-700">Received:</span>
+                    <span className="font-medium text-green-700">
+                      {formatCurrency(
+                        financialData.openingBalance?.receivedAmount || 0
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-sm text-green-700">To Pay:</span>
                     <span className="font-medium text-green-700">
                       {formatCurrency(
                         financialData.openingBalance?.outstandingToPay || 0
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-green-700">Paid:</span>
+                    <span className="font-medium text-green-700">
+                      {formatCurrency(
+                        financialData.openingBalance?.paidAmount || 0
                       )}
                     </span>
                   </div>
@@ -2099,10 +2115,28 @@ const BalanceSheet = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-sm text-green-700">
+                        Received:
+                      </span>
+                      <span className="font-medium text-green-700">
+                        {formatCurrency(
+                          financialData.closingBalance?.receivedAmount || 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-sm text-green-700">To Pay:</span>
                       <span className="font-medium text-green-700">
                         {formatCurrency(
                           financialData.closingBalance?.outstandingToPay || 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-green-700">Paid:</span>
+                      <span className="font-medium text-green-700">
+                        {formatCurrency(
+                          financialData.closingBalance?.paidAmount || 0
                         )}
                       </span>
                     </div>
