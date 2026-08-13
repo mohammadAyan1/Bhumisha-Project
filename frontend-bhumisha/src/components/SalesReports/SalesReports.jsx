@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // import React, { useEffect, useMemo, useState } from "react";
 // import companyAPI from "../../axios/companyAPI.js";
 // import getAllSalesBill from "../../axios/getAllSalesBill.js";
@@ -538,10 +540,7 @@
 //                 <label className="block text-xs font-semibold text-gray-600 mb-2">
 //                   From Date
 //                 </label>
-//                 <input
-//                   type="date"
-//                   value={dateFrom}
-//                   onChange={(e) => setDateFrom(e.target.value)}
+//                 <CustomDatePicker  // // value={dateFrom} // onChange={(e) => setDateFrom(e.target.value)}
 //                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 //                 />
 //               </div>
@@ -550,10 +549,7 @@
 //                 <label className="block text-xs font-semibold text-gray-600 mb-2">
 //                   To Date
 //                 </label>
-//                 <input
-//                   type="date"
-//                   value={dateTo}
-//                   onChange={(e) => setDateTo(e.target.value)}
+//                 <CustomDatePicker  // // value={dateTo} // onChange={(e) => setDateTo(e.target.value)}
 //                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 //                 />
 //               </div>
@@ -693,7 +689,7 @@
 //                           </td>
 //                           <td className="px-4 py-3 whitespace-nowrap text-gray-700">
 //                             {bill.bill_date
-//                               ? new Date(bill.bill_date).toLocaleDateString()
+//                               ? formatDateDMY(new Date(bill.bill_date))
 //                               : "-"}
 //                           </td>
 //                           <td className="px-4 py-3 text-gray-700">
@@ -822,15 +818,7 @@
 //                       </p>
 //                       <p className="text-lg font-semibold text-gray-800 mt-1">
 //                         {modalData.bill_date
-//                           ? new Date(modalData.bill_date).toLocaleDateString(
-//                               "en-IN",
-//                               {
-//                                 weekday: "short",
-//                                 year: "numeric",
-//                                 month: "short",
-//                                 day: "numeric",
-//                               }
-//                             )
+//                           ? formatDateDMY(new Date(modalData.bill_date))
 //                           : "-"}
 //                       </p>
 //                     </div>
@@ -1333,7 +1321,7 @@ const SalesReports = () => {
           "Company Code": bill.companyCode,
           "Bill No": bill.bill_no || "-",
           "Bill Date": bill.bill_date
-            ? new Date(bill.bill_date).toLocaleDateString()
+            ? formatDateDMY(new Date(bill.bill_date))
             : "-",
           "Party Type": bill.party_type || "-",
           "Buyer Type": bill.buyer_type || "-",
@@ -1807,10 +1795,7 @@ const SalesReports = () => {
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
                   From Date
                 </label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                <CustomDatePicker  value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1819,10 +1804,7 @@ const SalesReports = () => {
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
                   To Date
                 </label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                <CustomDatePicker  value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1962,7 +1944,7 @@ const SalesReports = () => {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-gray-700">
                             {bill.bill_date
-                              ? new Date(bill.bill_date).toLocaleDateString()
+                              ? formatDateDMY(new Date(bill.bill_date))
                               : "-"}
                           </td>
                           <td className="px-4 py-3 text-gray-700">
@@ -2091,15 +2073,7 @@ const SalesReports = () => {
                       </p>
                       <p className="text-lg font-semibold text-gray-800 mt-1">
                         {modalData.bill_date
-                          ? new Date(modalData.bill_date).toLocaleDateString(
-                              "en-IN",
-                              {
-                                weekday: "short",
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )
+                          ? formatDateDMY(new Date(modalData.bill_date))
                           : "-"}
                       </p>
                     </div>

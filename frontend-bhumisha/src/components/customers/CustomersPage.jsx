@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 // // src/components/customers/CustomersPage.jsx
 // import { useEffect, useMemo, useState, useCallback } from "react";
 // import customersAPI from "../../axios/customerAPI";
@@ -1004,20 +1005,12 @@
 //             <div className="px-5 py-3 border-b flex gap-3 items-end">
 //               <div>
 //                 <label className="text-xs text-gray-600">From</label>
-//                 <input
-//                   type="date"
-//                   className="border p-2 rounded w-44"
-//                   value={stFrom}
-//                   onChange={(e) => setStFrom(e.target.value)}
+//                 <CustomDatePicker  // // className="border p-2 rounded w-44" // value={stFrom} // onChange={(e) => setStFrom(e.target.value)}
 //                 />
 //               </div>
 //               <div>
 //                 <label className="text-xs text-gray-600">To</label>
-//                 <input
-//                   type="date"
-//                   className="border p-2 rounded w-44"
-//                   value={stTo}
-//                   onChange={(e) => setStTo(e.target.value)}
+//                 <CustomDatePicker  // // className="border p-2 rounded w-44" // value={stTo} // onChange={(e) => setStTo(e.target.value)}
 //                 />
 //               </div>
 //               <div>
@@ -2442,20 +2435,12 @@ export default function CustomersPage() {
             <div className="px-5 py-3 border-b flex gap-3 items-end">
               <div>
                 <label className="text-xs text-gray-600">From</label>
-                <input
-                  type="date"
-                  className="border p-2 rounded w-44"
-                  value={stFrom}
-                  onChange={(e) => setStFrom(e.target.value)}
+                <CustomDatePicker  className="border p-2 rounded w-44" value={stFrom} onChange={(e) => setStFrom(e.target.value)}
                 />
               </div>
               <div>
                 <label className="text-xs text-gray-600">To</label>
-                <input
-                  type="date"
-                  className="border p-2 rounded w-44"
-                  value={stTo}
-                  onChange={(e) => setStTo(e.target.value)}
+                <CustomDatePicker  className="border p-2 rounded w-44" value={stTo} onChange={(e) => setStTo(e.target.value)}
                 />
               </div>
               <div>

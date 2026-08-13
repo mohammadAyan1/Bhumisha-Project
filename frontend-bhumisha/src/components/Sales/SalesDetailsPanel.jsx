@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // src/pages/sales/SalesDetailsPanel.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import salesAPI from "../../axios/salesAPI";
@@ -151,7 +152,7 @@ export default function SalesDetailsPanel({ id, onClose }) {
                   <div className="font-semibold">
                     {/* {sale.bill_date ||
                       (sale.created_at
-                        ? new Date(sale.created_at).toLocaleDateString()
+                        ? formatDateDMY(new Date(sale.created_at))
                         : "-")} */}
                     {formatDateDMY(sale?.bill_date)}
                   </div>

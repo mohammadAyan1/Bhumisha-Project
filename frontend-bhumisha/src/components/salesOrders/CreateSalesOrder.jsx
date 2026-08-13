@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useEffect, useMemo, useState } from "react";
 import { refApi, soApi } from "../../axios/soApi.js";
 import sequenceAPI from "../../axios/sequenceAPI.js";
@@ -787,13 +788,7 @@ export default function CreateSalesOrder({ so = null, onSaved }) {
 
               <div className="flex flex-col">
                 <label className="text-sm text-gray-600 mb-1">Date</label>
-                <input
-                  type="date"
-                  className="border rounded-lg p-2"
-                  name="date"
-                  value={form.date}
-                  onChange={onHeader}
-                />
+                <CustomDatePicker  className="border rounded-lg p-2" name="date" value={form.date} onChange={onHeader}  />
               </div>
 
               <div className="flex flex-col">

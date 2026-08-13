@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // import React, { useEffect, useMemo, useState } from "react";
 // import PurchaseAPI from "../../axios/purchaseApi";
 // import { toast } from "react-toastify";
@@ -563,9 +564,7 @@
 //                     <div className="text-sm text-gray-500 mt-1">
 //                       Date:{" "}
 //                       {purchase.bill_date
-//                         ? new Date(purchase.bill_date).toLocaleDateString(
-//                             "en-IN"
-//                           )
+//                         ? formatDateDMY(new Date(purchase.bill_date))
 //                         : "N/A"}
 //                     </div>
 //                   </div>
@@ -638,14 +637,7 @@
 //                         <div className="text-sm text-gray-500">Bill Date</div>
 //                         <div className="font-medium">
 //                           {purchase.bill_date
-//                             ? new Date(purchase.bill_date).toLocaleDateString(
-//                                 "en-IN",
-//                                 {
-//                                   day: "2-digit",
-//                                   month: "short",
-//                                   year: "numeric",
-//                                 }
-//                               )
+//                             ? formatDateDMY(new Date(purchase.bill_date))
 //                             : "-"}
 //                         </div>
 //                       </div>
@@ -1011,11 +1003,7 @@
 //                 </p>
 //                 <p className="mt-2">
 //                   Printed on:{" "}
-//                   {new Date().toLocaleDateString("en-IN", {
-//                     day: "2-digit",
-//                     month: "short",
-//                     year: "numeric",
-//                   })}{" "}
+//                   {formatDateDMY(new Date())}{" "}
 //                   at{" "}
 //                   {new Date().toLocaleTimeString("en-IN", {
 //                     hour: "2-digit",
@@ -1457,9 +1445,7 @@ export default function PurchaseDetailsPanel({ id, onClose }) {
                     <div className="text-sm text-gray-500 mt-1">
                       Date:{" "}
                       {purchase.bill_date
-                        ? new Date(purchase.bill_date).toLocaleDateString(
-                            "en-IN"
-                          )
+                        ? formatDateDMY(new Date(purchase.bill_date))
                         : "N/A"}
                     </div>
                   </div>
@@ -1532,14 +1518,7 @@ export default function PurchaseDetailsPanel({ id, onClose }) {
                         <div className="text-sm text-gray-500">Bill Date</div>
                         <div className="font-medium">
                           {purchase.bill_date
-                            ? new Date(purchase.bill_date).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )
+                            ? formatDateDMY(new Date(purchase.bill_date))
                             : "-"}
                         </div>
                       </div>
@@ -1994,11 +1973,7 @@ export default function PurchaseDetailsPanel({ id, onClose }) {
                 </p>
                 <p className="mt-2">
                   Printed on:{" "}
-                  {new Date().toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}{" "}
+                  {formatDateDMY(new Date())}{" "}
                   at{" "}
                   {new Date().toLocaleTimeString("en-IN", {
                     hour: "2-digit",

@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   FaSearch,
@@ -324,7 +325,7 @@ const BalanceSheet = () => {
       doc.setFontSize(12);
       doc.text(`Company: ${getCompanyName()}`, 14, 25);
       doc.text(`Period: ${getMonthName()} ${selectedYear}`, 14, 32);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 39);
+      doc.text(`Generated: ${formatDateDMY(new Date())}`, 14, 39);
 
       let yPos = 50;
 
@@ -890,7 +891,7 @@ const BalanceSheet = () => {
       summarySheet.getCell(`A${currentRow}`).value = "Generated:";
       summarySheet.getCell(`A${currentRow}`).font = { bold: true };
       summarySheet.getCell(`B${currentRow}`).value =
-        new Date().toLocaleDateString();
+        formatDateDMY(new Date());
       currentRow += 2;
 
       // Key Metrics Table

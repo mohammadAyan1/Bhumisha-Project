@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import salesAPI from "../../axios/salesAPI";
@@ -1595,15 +1596,7 @@ export default function SalesForm({
                 <label htmlFor="date" className="text-sm text-gray-600 mb-1">
                   Date
                 </label>
-                <input
-                  id="date"
-                  ref={headerRefs.date}
-                  type="date"
-                  className={`border p-2 rounded-lg ${
-                    errors.header.date ? errClass : ""
-                  }`}
-                  value={header.date}
-                  onChange={(e) =>
+                <CustomDatePicker  id="date" ref={headerRefs.date} className={`border p-2 rounded-lg ${ errors.header.date ? errClass : "" }`} value={header.date} onChange={(e) =>
                     onHeader({
                       target: { name: "date", value: e.target.value },
                     })

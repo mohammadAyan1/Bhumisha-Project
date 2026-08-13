@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PurchaseAPI from "../../axios/purchaseApi";
@@ -46,7 +47,7 @@ export default function PurchaseView() {
         <strong>Vendor:</strong> {p.vendor_name || p.vendor_id || "N/A"}
       </div>
       <div className="mb-4">
-        <strong>Date:</strong> {p.bill_date ? new Date(p.bill_date).toLocaleDateString() : "N/A"}
+        <strong>Date:</strong> {p.bill_date ? formatDateDMY(new Date(p.bill_date)) : "N/A"}
       </div>
 
       <div className="mb-4">

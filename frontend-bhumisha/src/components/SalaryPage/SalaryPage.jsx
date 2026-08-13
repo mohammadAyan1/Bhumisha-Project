@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useState } from "react";
 import EmployeeList from "../../components/EmployeeList/EmployeeList";
 import salaryPageAPI from "../../axios/SalaryPageAPI";
@@ -112,11 +114,7 @@ export default function SalaryPage() {
               onChange={(e) => setMonth(Number(e.target.value))}
             />
 
-            <input
-              type="date"
-              className="p-2 rounded-lg border border-gray-300"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
+            <CustomDatePicker  className="p-2 rounded-lg border border-gray-300" value={toDate} onChange={(e) => setToDate(e.target.value)}
             />
 
             <button
@@ -176,7 +174,7 @@ export default function SalaryPage() {
                   {report.attendanceRows?.map((rec, idx) => (
                     <tr key={idx}>
                       <td className="px-2 py-1">
-                        {new Date(rec.date).toLocaleDateString()}
+                        {formatDateDMY(new Date(rec.date))}
                       </td>
                       <td className="px-2 py-1">{rec.status}</td>
                       <td className="px-2 py-1">{rec.leave_type || "-"}</td>
@@ -194,7 +192,7 @@ export default function SalaryPage() {
                 <ul className="list-disc ml-6 text-sm">
                   {report.holidayDates.map((d, idx) => (
                     <li key={idx}>
-                      {/* {new Date(formatDateDMY(d)).toLocaleDateString()} */}
+                      {/* {new formatDateDMY(Date(formatDateDMY(d)))} */}
                       {formatDateDMY(d?.holiday_date)} - {d?.remark}
                     </li>
                   ))}

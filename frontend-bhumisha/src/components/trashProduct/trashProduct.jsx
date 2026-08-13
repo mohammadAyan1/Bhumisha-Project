@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "react-toastify";
 import productAPI from "../../axios/productAPI.js";
@@ -732,19 +733,13 @@ const TrashProductManagement = () => {
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="date"
-                  value={dateFilter.from}
-                  onChange={(e) =>
+                <CustomDatePicker  value={dateFilter.from} onChange={(e) =>
                     setDateFilter((prev) => ({ ...prev, from: e.target.value }))
                   }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="From Date"
                 />
-                <input
-                  type="date"
-                  value={dateFilter.to}
-                  onChange={(e) =>
+                <CustomDatePicker  value={dateFilter.to} onChange={(e) =>
                     setDateFilter((prev) => ({ ...prev, to: e.target.value }))
                   }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

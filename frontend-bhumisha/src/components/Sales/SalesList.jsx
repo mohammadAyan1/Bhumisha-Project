@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // // src/pages/sales/SalesList.jsx
 // import React, { useEffect, useMemo, useState } from "react";
 // import { useNavigate } from "react-router-dom";
@@ -17,7 +18,7 @@
 // //   if (!d) return "-";
 // //   const dt = typeof d === "string" ? d : String(d);
 // //   const t = new Date(dt);
-// //   return isNaN(t.getTime()) ? dt : t.toLocaleDateString();
+// //   return isNaN(t.getTime()) ? dt : formatDateDMY(t);
 // // };
 
 // export default function SalesList({ onEdit, onCreate, onDetails }) {

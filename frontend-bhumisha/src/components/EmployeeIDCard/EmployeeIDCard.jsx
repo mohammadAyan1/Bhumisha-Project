@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import EmployeeIDCardAPI from "../../axios/EmployeeIDCardAPI";
@@ -78,7 +79,7 @@ export default function EmployeeIDCard() {
           </p>
           <p>
             <span className="font-semibold">Joining Date:</span>{" "}
-            {new Date(employee.join_date).toLocaleDateString()}
+            {formatDateDMY(new Date(employee.join_date))}
           </p>
         </div>
 

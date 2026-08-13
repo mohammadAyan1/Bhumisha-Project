@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchVendors } from "../../features/vendor/vendorThunks";
@@ -516,13 +517,7 @@ const PurchaseOrderForm = ({ purchaseOrder, onSubmitted }) => {
       <div className="grid grid-cols-6 gap-3 border p-3  rounded">
         <div className="flex flex-col">
           <label className="text-xs">Bill Date</label>
-          <input
-            type="date"
-            className="border rounded p-1"
-            name="date"
-            value={header.date}
-            onChange={onHeader}
-          />
+          <CustomDatePicker  className="border rounded p-1" name="date" value={header.date} onChange={onHeader}  />
         </div>
 
         <div className="flex flex-col">

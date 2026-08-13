@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState, useMemo } from "react";
 import expensesAPI from "../../axios/ExpensesAPI.js";
 
@@ -266,11 +268,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDateDMY(date);
   };
 
   useEffect(() => {
@@ -520,10 +518,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                 Date Range
               </label>
                 <div className="flex flex-col gap-3 lg:flex-row">
-                  <input
-                    type="date"
-                    value={filters.date_range.start}
-                    onChange={(e) =>
+                  <CustomDatePicker  value={filters.date_range.start} onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
                         date_range: {
@@ -535,10 +530,7 @@ const ExpensesList = ({ onchangeEdit, switchTable }) => {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Start Date"
                   />
-                  <input
-                    type="date"
-                    value={filters.date_range.end}
-                    onChange={(e) =>
+                  <CustomDatePicker  value={filters.date_range.end} onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
                         date_range: { ...prev.date_range, end: e.target.value },

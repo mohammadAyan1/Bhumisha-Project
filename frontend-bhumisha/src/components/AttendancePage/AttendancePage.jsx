@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useState, useEffect } from 'react';
 import api from '../../axios/AttendanceAPI';
 import EmployeeList from '../EmployeeList/EmployeeList';
@@ -25,7 +26,7 @@ export default function AttendancePage() {
 
             <div>
                 <h3>Mark Attendance {selected ? `for ${selected.name}` : ''}</h3>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                <CustomDatePicker  value={date} onChange={e => setDate(e.target.value)} />
                 <div>
                     <select value={status} onChange={e => setStatus(e.target.value)}>
                         <option value="present">Present</option>

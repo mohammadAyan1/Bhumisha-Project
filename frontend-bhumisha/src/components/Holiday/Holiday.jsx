@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState } from "react";
 import holidayAPI from "../../axios/Holiday";
 import { toast } from "react-toastify";
@@ -112,12 +114,7 @@ const Holiday = () => {
             <label className="text-sm font-medium text-gray-600">
               Holiday Date
             </label>
-            <input
-              type="date"
-              name="holidayDate"
-              value={holidayData?.holidayDate}
-              className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              onChange={(e) =>
+            <CustomDatePicker  name="holidayDate" value={holidayData?.holidayDate} className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" onChange={(e) =>
                 setHolidayData((prev) => ({
                   ...prev,
                   [e.target.name]: e.target.value,
@@ -156,11 +153,7 @@ const Holiday = () => {
       <div className="bg-white rounded-xl shadow-md p-4 flex flex-wrap gap-4 items-end">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-600">From Date</label>
-          <input
-            type="date"
-            name="from"
-            className="border rounded-md px-3 py-2"
-            onChange={(e) =>
+          <CustomDatePicker  name="from" className="border rounded-md px-3 py-2" onChange={(e) =>
               setDate((prev) => ({ ...prev, from: e.target.value }))
             }
           />
@@ -168,11 +161,7 @@ const Holiday = () => {
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-600">To Date</label>
-          <input
-            type="date"
-            name="to"
-            className="border rounded-md px-3 py-2"
-            onChange={(e) =>
+          <CustomDatePicker  name="to" className="border rounded-md px-3 py-2" onChange={(e) =>
               setDate((prev) => ({ ...prev, to: e.target.value }))
             }
           />
@@ -207,7 +196,7 @@ const Holiday = () => {
               <tr key={index} className="border-t hover:bg-gray-50 transition">
                 <td className="px-6 py-3">
                   {item?.holiday_date
-                    ? new Date(item.holiday_date).toLocaleDateString("en-GB")
+                    ? formatDateDMY(new Date(item.holiday_date))
                     : ""}
                 </td>
 

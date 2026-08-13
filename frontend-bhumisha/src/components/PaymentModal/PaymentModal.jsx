@@ -1,3 +1,4 @@
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useState, useEffect } from "react";
 import payBillAPI from "../../axios/payBill";
 
@@ -500,9 +501,9 @@ const PaymentModal = ({ bill, onClose, onSuccess }) => {
                           {billDetails.payments.map((payment) => (
                             <tr key={payment.id}>
                               <td className="px-4 py-2 text-sm text-gray-900">
-                                {new Date(
+                                {formatDateDMY(new Date(
                                   payment.created_at
-                                ).toLocaleDateString()}
+                                ))}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 font-medium">
                                 {formatCurrency(payment.amount)}

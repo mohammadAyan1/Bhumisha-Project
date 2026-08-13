@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -188,7 +190,7 @@ export default function FarmerList({ onEdit }) {
 
           return {
             "S.No.": index + 1,
-            Date: new Date(row.tx_datetime).toLocaleDateString(),
+            Date: formatDateDMY(new Date(row.tx_datetime)),
             Type: row.tx_type,
             "Reference No": row.ref_no || "",
             Description: row.note || "",
@@ -288,7 +290,7 @@ export default function FarmerList({ onEdit }) {
           Type: "",
           "Reference No": "",
           Description: "",
-          Amount: new Date().toLocaleDateString(),
+          Amount: formatDateDMY(new Date()),
           Effect: "",
           Balance: "",
         },
@@ -687,10 +689,7 @@ export default function FarmerList({ onEdit }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   From Date
                 </label>
-                <input
-                  type="date"
-                  value={stFrom}
-                  onChange={(e) => setStFrom(e.target.value)}
+                <CustomDatePicker  value={stFrom} onChange={(e) => setStFrom(e.target.value)}
                   className="border rounded px-3 py-2"
                 />
               </div>
@@ -698,10 +697,7 @@ export default function FarmerList({ onEdit }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   To Date
                 </label>
-                <input
-                  type="date"
-                  value={stTo}
-                  onChange={(e) => setStTo(e.target.value)}
+                <CustomDatePicker  value={stTo} onChange={(e) => setStTo(e.target.value)}
                   className="border rounded px-3 py-2"
                 />
               </div>
@@ -857,7 +853,7 @@ export default function FarmerList({ onEdit }) {
                         return (
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="px-4 py-2 border-b">
-                              {new Date(row.tx_datetime).toLocaleDateString()}
+                              {formatDateDMY(new Date(row.tx_datetime))}
                             </td>
                             <td className="px-4 py-2 border-b">
                               <span
@@ -962,9 +958,9 @@ export default function FarmerList({ onEdit }) {
                     </h2>
                     <p className="text-gray-600">
                       {invoiceDetails.invoice.farmer_name} • Date:{" "}
-                      {new Date(
+                      {formatDateDMY(new Date(
                         invoiceDetails.invoice.bill_date
-                      ).toLocaleDateString()}
+                      ))}
                     </p>
                   </div>
                   <button
@@ -1113,9 +1109,9 @@ export default function FarmerList({ onEdit }) {
                             <tr key={index} className="hover:bg-gray-50">
                               <td className="px-4 py-2 border-b">
                                 {payment.payment_date_formatted ||
-                                  new Date(
+                                  formatDateDMY(new Date(
                                     payment.payment_date
-                                  ).toLocaleDateString()}
+                                  ))}
                               </td>
                               <td className="px-4 py-2 border-b">
                                 {payment.method}

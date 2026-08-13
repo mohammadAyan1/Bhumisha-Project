@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setEditingVendor } from "../../features/vendor/vendorSlice";
@@ -252,7 +254,7 @@ export default function VendorList() {
           Type: "",
           "Reference No": "",
           Description: "",
-          Amount: new Date().toLocaleDateString(),
+          Amount: formatDateDMY(new Date()),
           Effect: "",
           Balance: "",
         },
@@ -821,10 +823,7 @@ export default function VendorList() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   From Date
                 </label>
-                <input
-                  type="date"
-                  value={stFrom}
-                  onChange={(e) => setStFrom(e.target.value)}
+                <CustomDatePicker  value={stFrom} onChange={(e) => setStFrom(e.target.value)}
                   className="border rounded px-3 py-2"
                 />
               </div>
@@ -832,10 +831,7 @@ export default function VendorList() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   To Date
                 </label>
-                <input
-                  type="date"
-                  value={stTo}
-                  onChange={(e) => setStTo(e.target.value)}
+                <CustomDatePicker  value={stTo} onChange={(e) => setStTo(e.target.value)}
                   className="border rounded px-3 py-2"
                 />
               </div>

@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // import React, { useEffect, useMemo, useState } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { useDispatch, useSelector } from "react-redux";
@@ -143,7 +145,7 @@
 //       headerName: "Date",
 //       width: 140,
 //       renderCell: (params) =>
-//         params.value ? new Date(params.value).toLocaleDateString() : "N/A",
+//         params.value ? formatDateDMY(new Date(params.value)) : "N/A",
 //     },
 //     {
 //       field: "total_amount",
@@ -205,19 +207,13 @@
 //       <div className="flex flex-wrap items-end gap-3 mb-6">
 //         <div>
 //           <label className="block text-sm text-gray-700 mb-1">From Date</label>
-//           <input
-//             type="date"
-//             value={fromDate}
-//             onChange={(e) => setFromDate(e.target.value)}
+//           <CustomDatePicker  // // value={fromDate} // onChange={(e) => setFromDate(e.target.value)}
 //             className="border rounded-lg p-2"
 //           />
 //         </div>
 //         <div>
 //           <label className="block text-sm text-gray-700 mb-1">To Date</label>
-//           <input
-//             type="date"
-//             value={toDate}
-//             onChange={(e) => setToDate(e.target.value)}
+//           <CustomDatePicker  // // value={toDate} // onChange={(e) => setToDate(e.target.value)}
 //             className="border rounded-lg p-2"
 //           />
 //         </div>
@@ -650,7 +646,7 @@ export default function PurchaseList({ reload }) {
       width: 120,
       renderCell: (params) =>
         params.value
-          ? new Date(params.value).toLocaleDateString("en-IN")
+          ? formatDateDMY(new Date(params.value))
           : "N/A",
     },
     {
@@ -807,20 +803,14 @@ export default function PurchaseList({ reload }) {
 
         <div>
           <label className="block text-sm text-gray-700 mb-1">From Date</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+          <CustomDatePicker  value={fromDate} onChange={(e) => setFromDate(e.target.value)}
             className="border rounded-lg p-2 w-full"
             disabled={!filterByDate}
           />
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1">To Date</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+          <CustomDatePicker  value={toDate} onChange={(e) => setToDate(e.target.value)}
             className="border rounded-lg p-2 w-full"
             disabled={!filterByDate}
           />
@@ -1414,7 +1404,7 @@ export default function PurchaseList({ reload }) {
 //       width: 120,
 //       renderCell: (params) =>
 //         params.value
-//           ? new Date(params.value).toLocaleDateString("en-IN")
+//           ? formatDateDMY(new Date(params.value))
 //           : "N/A",
 //     },
 //     {
@@ -1546,20 +1536,14 @@ export default function PurchaseList({ reload }) {
 
 //         <div>
 //           <label className="block text-sm text-gray-700 mb-1">From Date</label>
-//           <input
-//             type="date"
-//             value={fromDate}
-//             onChange={(e) => setFromDate(e.target.value)}
+//           <CustomDatePicker  // // value={fromDate} // onChange={(e) => setFromDate(e.target.value)}
 //             className="border rounded-lg p-2 w-full"
 //             disabled={!filterByDate}
 //           />
 //         </div>
 //         <div>
 //           <label className="block text-sm text-gray-700 mb-1">To Date</label>
-//           <input
-//             type="date"
-//             value={toDate}
-//             onChange={(e) => setToDate(e.target.value)}
+//           <CustomDatePicker  // // value={toDate} // onChange={(e) => setToDate(e.target.value)}
 //             className="border rounded-lg p-2 w-full"
 //             disabled={!filterByDate}
 //           />

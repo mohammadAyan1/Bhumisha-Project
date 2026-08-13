@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 import React, { useEffect, useState, useCallback } from "react";
 import payBillAPI from "../../axios/payBill";
 import PaymentModal from "../PaymentModal/PaymentModal";
@@ -206,7 +208,7 @@ const BillPayment = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     try {
-      return new Date(dateString).toLocaleDateString();
+      return formatDateDMY(new Date(dateString));
     } catch {
       return "-";
     }
@@ -323,26 +325,14 @@ const BillPayment = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               From Date
             </label>
-            <input
-              type="date"
-              name="fromDate"
-              value={filters.fromDate}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
+            <CustomDatePicker  name="fromDate" value={filters.fromDate} onChange={handleFilterChange} className="w-full p-2 border border-gray-300 rounded-md"  />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               To Date
             </label>
-            <input
-              type="date"
-              name="toDate"
-              value={filters.toDate}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
+            <CustomDatePicker  name="toDate" value={filters.toDate} onChange={handleFilterChange} className="w-full p-2 border border-gray-300 rounded-md"  />
           </div>
 
           <div className="flex items-end gap-2">

@@ -1,3 +1,5 @@
+import CustomDatePicker from "../CustomDatePicker";
+import { formatDateDMY } from "../../utils/dateUtils.js";
 // import React, { useEffect, useMemo, useState } from "react";
 // import companyAPI from "../../axios/companyAPI.js";
 // import getAllPurchaseBill from "../../axios/getAllPurchasesBill.js";
@@ -444,10 +446,7 @@
 //                   From Date
 //                 </label>
 //                 <div className="flex items-center gap-2">
-//                   <input
-//                     type="date"
-//                     value={dateFrom}
-//                     onChange={(e) => setDateFrom(e.target.value)}
+//                   <CustomDatePicker  // // value={dateFrom} // onChange={(e) => setDateFrom(e.target.value)}
 //                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 //                   />
 //                   <button
@@ -464,10 +463,7 @@
 //                 <label className="block text-xs font-semibold text-gray-600 mb-2">
 //                   To Date
 //                 </label>
-//                 <input
-//                   type="date"
-//                   value={dateTo}
-//                   onChange={(e) => setDateTo(e.target.value)}
+//                 <CustomDatePicker  // // value={dateTo} // onChange={(e) => setDateTo(e.target.value)}
 //                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 //                 />
 //               </div>
@@ -751,14 +747,9 @@
 //                       </p>
 //                       <p className="text-lg font-semibold text-gray-800 mt-1">
 //                         {modalData.items[0]?.items[0]?.bill_date
-//                           ? new Date(
+//                           ? formatDateDMY(new Date(
 //                               modalData.items[0]?.items[0]?.bill_date
-//                             ).toLocaleDateString("en-IN", {
-//                               weekday: "short",
-//                               year: "numeric",
-//                               month: "short",
-//                               day: "numeric",
-//                             })
+//                             ))
 //                           : "-"}
 //                       </p>
 //                     </div>
@@ -1579,10 +1570,7 @@ const PurchaseBillsTable = () => {
                   From Date
                 </label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
+                  <CustomDatePicker  value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
@@ -1599,10 +1587,7 @@ const PurchaseBillsTable = () => {
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
                   To Date
                 </label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                <CustomDatePicker  value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1880,14 +1865,9 @@ const PurchaseBillsTable = () => {
                       </p>
                       <p className="text-lg font-semibold text-gray-800 mt-1">
                         {modalData.items[0]?.items[0]?.bill_date
-                          ? new Date(
+                          ? formatDateDMY(new Date(
                               modalData.items[0]?.items[0]?.bill_date
-                            ).toLocaleDateString("en-IN", {
-                              weekday: "short",
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                            ))
                           : "-"}
                       </p>
                     </div>

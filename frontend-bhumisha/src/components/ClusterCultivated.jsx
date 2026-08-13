@@ -1,3 +1,5 @@
+import CustomDatePicker from "./CustomDatePicker";
+import { formatDateDMY } from "../utils/dateUtils.js";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
@@ -647,14 +649,7 @@ const ClusterCultivated = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Start Date *
                       </label>
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleFormChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        required
-                      />
+                      <CustomDatePicker  name="startDate" value={formData.startDate} onChange={handleFormChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required  />
                     </div>
 
                     {/* End Date */}
@@ -662,14 +657,7 @@ const ClusterCultivated = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         End Date *
                       </label>
-                      <input
-                        type="date"
-                        name="endDate"
-                        value={formData.endDate}
-                        onChange={handleFormChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        required
-                      />
+                      <CustomDatePicker  name="endDate" value={formData.endDate} onChange={handleFormChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required  />
                     </div>
                   </div>
 
@@ -739,19 +727,13 @@ const ClusterCultivated = () => {
               <div className="space-y-2">
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
+                  <CustomDatePicker  value={fromDate} onChange={(e) => setFromDate(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
+                  <CustomDatePicker  value={toDate} onChange={(e) => setToDate(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
@@ -1048,10 +1030,10 @@ const ClusterCultivated = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-gray-700">
-                        {new Date(item.start_date).toLocaleDateString()}
+                        {formatDateDMY(new Date(item.start_date))}
                       </td>
                       <td className="py-3 px-4 text-gray-700">
-                        {new Date(item.end_date).toLocaleDateString()}
+                        {formatDateDMY(new Date(item.end_date))}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">

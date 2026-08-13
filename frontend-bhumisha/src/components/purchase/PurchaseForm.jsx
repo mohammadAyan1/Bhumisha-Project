@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PurchaseAPI from "../../axios/purchaseApi";
@@ -815,13 +816,7 @@ const PurchaseForm = ({ onSaved }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col">
                 <label className="text-xs">Bill Date</label>
-                <input
-                  type="date"
-                  className="border rounded p-1"
-                  name="bill_date"
-                  value={header.bill_date}
-                  onChange={onHeader}
-                />
+                <CustomDatePicker  className="border rounded p-1" name="bill_date" value={header.bill_date} onChange={onHeader}  />
               </div>
               <div className="flex flex-col">
                 <label className="text-xs">Party Type</label>

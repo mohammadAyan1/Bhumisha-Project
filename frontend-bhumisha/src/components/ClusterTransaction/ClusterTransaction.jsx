@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -476,13 +477,7 @@ const ClusterTransaction = () => {
 
           <div>
             <label className="font-medium">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={formData?.date}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
+            <CustomDatePicker  name="date" value={formData?.date} onChange={handleInputChange} className="w-full p-2 border rounded"  />
           </div>
 
           <div className="col-span-2">

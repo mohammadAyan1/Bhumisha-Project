@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 // import React, { useEffect, useMemo, useState } from "react";
 // import { useDispatch, useSelector } from "react-redux";
 // import { fetchVendors } from "../../features/vendor/vendorThunks";
@@ -253,7 +254,7 @@
 
 //         <div className="flex flex-col">
 //           <label className="text-xs text-gray-600">Dateeee</label>
-//           <input type="date" className="border rounded p-2" name="date" value={formData.date} onChange={changeHeader} />
+//           <CustomDatePicker  className="border rounded p-2" name="date" value={formData.date} onChange={changeHeader}  />
 //         </div>
 
 //         <div className="flex flex-col">

@@ -1,3 +1,4 @@
+import CustomDatePicker from "../CustomDatePicker";
 import React, { useState } from "react";
 import EmployeeList from "../../components/EmployeeList/EmployeeList";
 import EmployeePageApi from "../../axios/EmployeesPageApi";
@@ -126,12 +127,7 @@ export default function EmployeesPage() {
             <label className="block mb-1 font-medium text-gray-700">
               Joining Date
             </label>
-            <input
-              type="date"
-              className="w-full p-2 rounded-lg border border-gray-300 focus:border-[var(--accent)] focus:ring focus:ring-[var(--accent)]/20 outline-none"
-              value={form.join_date}
-              required
-              onChange={(e) => setForm({ ...form, join_date: e.target.value })}
+            <CustomDatePicker  className="w-full p-2 rounded-lg border border-gray-300 focus:border-[var(--accent)] focus:ring focus:ring-[var(--accent)]/20 outline-none" value={form.join_date} required onChange={(e) => setForm({ ...form, join_date: e.target.value })}
             />
           </div>
 
@@ -139,11 +135,7 @@ export default function EmployeesPage() {
             <label className="block mb-1 font-medium text-gray-700">
               Salary Date
             </label>
-            <input
-              type="date"
-              className="w-full p-2 rounded-lg border border-gray-300 focus:border-[var(--accent)] focus:ring focus:ring-[var(--accent)]/20 outline-none"
-              value={form.salary_date}
-              onChange={(e) =>
+            <CustomDatePicker  className="w-full p-2 rounded-lg border border-gray-300 focus:border-[var(--accent)] focus:ring focus:ring-[var(--accent)]/20 outline-none" value={form.salary_date} onChange={(e) =>
                 setForm({ ...form, salary_date: e.target.value })
               }
             />
