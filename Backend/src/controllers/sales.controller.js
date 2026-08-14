@@ -4,6 +4,7 @@ const Sales = require("../models/sales.model");
 const { normalize } = require("../services/companyCode");
 const Company = require("../models/company.model");
 const { generateSoToSaleResponse } = require("../services/convertSoToSale");
+const db = require("../config/db");
 
 // Add this helper function in your sales controller or a separate utility file
 function getFinancialYear(date = new Date()) {

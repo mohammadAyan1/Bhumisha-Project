@@ -751,7 +751,7 @@ const Sales = {
     if (!Array.isArray(items) || items.length === 0)
       throw new Error("items[] required");
     //////////////////////!SECTION
-    const finalBillNo = bill_no || existingSale.bill_no;
+    const finalBillNo = bill_no;
     /////////////////////!SECTION
 
     const conn = await Sales.getConnection();
