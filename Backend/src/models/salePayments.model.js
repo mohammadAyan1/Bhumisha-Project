@@ -4,22 +4,8 @@ const mysql = require('mysql2/promise');
 
 const { tn } = require('../services/tableName');
 
-let _pool;
 const getConnection = async () => {
-  if (!_pool) {
-    _pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      port: process.env.DB_PORT,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      multipleStatements: false,
-      connectionLimit: 10,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
-    });
-  }
-  return await _pool.getConnection();
+  return await db.promise().getConnection();
 };
 
 const SalePayments = {
