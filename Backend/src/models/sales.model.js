@@ -569,14 +569,14 @@ const Sales = {
         COALESCE((
           SELECT SUM(s.total_amount)
           FROM \`${salesTable}\` s
-          WHERE s.${party_type}_id = ? AND (s.status IS NULL OR s.status <> 'Cancelled')
+          WHERE s.${party_type}_id = ? AND s.id != ? AND (s.status IS NULL OR s.status <> 'Cancelled')
         ), 0) AS total_sales,
         COALESCE((
           SELECT SUM(p.amount)
           FROM \`${paymentsTable}\` p
           WHERE p.party_type = ? AND p.${party_type}_id = ?
         ), 0) AS total_payments`,
-        [chosenId, party_type, chosenId]
+        [chosenId, company_sale_id, party_type, chosenId]
       );
 
       const total_sales = Number(agg?.total_sales || 0);
