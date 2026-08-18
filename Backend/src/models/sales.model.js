@@ -125,9 +125,9 @@ const Sales = {
     try {
       const salesTable = tn(code, "sales");
 
-      // Extract company prefix from code (remove numbers and underscores)
-      // For code like "cmp_01", extract "CMP"
-      const companyPrefix = code.replace(/[^a-zA-Z]/g, "").toUpperCase();
+      // Extract company prefix from code (remove non-alphanumeric)
+      // For code like "cmp_01", extract "CMP01"
+      const companyPrefix = code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
       // Get financial year
       const financialYear = getFinancialYear();
@@ -214,7 +214,7 @@ const Sales = {
 
       ///////////////!SECTION
       // Generate new bill number
-      const companyPrefix = code.replace(/[^a-zA-Z]/g, "").toUpperCase();
+      const companyPrefix = code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       const financialYear = getFinancialYear(new Date(bill_date || new Date()));
 
       // Get the last sequence number for this company and financial year
