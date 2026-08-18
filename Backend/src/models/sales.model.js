@@ -362,7 +362,7 @@ const Sales = {
           party_type === "farmer" ? chosenId : null,
           party_type,
           buyer_type,
-          finalBillNo,
+          salesBill,
           bill_date,
           payment_status,
           payment_method,

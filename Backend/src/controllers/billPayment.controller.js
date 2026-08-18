@@ -164,142 +164,151 @@ const billController = {
         purchaseParams.push(toDate);
       }
 
-      // Sales query - Updated to include payments count
-      const salesSql = `
-        SELECT
-          s.id as sale_id,
-          s.bill_no as invoice_no,
-          s.total_amount,
-          s.total_discount_amount,
-          s.total_gst as total_gst_amount,
-          s.party_type,
-          s.created_at,
-          s.bill_date,
-          s.company_id,
-          s.other_amount as transport_amount,
-          s.total_taxable,
-          si.product_id,
-          si.qty as item_quantity,
-          si.rate as item_rate,
-          si.net_total as item_total,
-          si.discount_rate as item_discount_percent,
-          si.discount_amount as item_discount_amount,
-          si.gst_percent as item_gst_percent,
-          si.gst_amount as item_gst_amount,
-          si.unit as item_unit,
-          pr.product_name,
-          pr.hsn_code as product_hsn_code,
-          c.code as company_code,
-          c.name as company_name,
-          CASE
-            WHEN s.party_type = 'vendor' THEN v.vendor_name
-            WHEN s.party_type = 'farmer' THEN f.name
-            WHEN s.party_type = 'customer' THEN cus.name
-          END as party_name,
-          CASE
-            WHEN s.party_type = 'vendor' THEN v.firm_name
-            WHEN s.party_type = 'farmer' THEN f.name
-            WHEN s.party_type = 'customer' THEN cus.firm_name
-          END as firm_name,
-          COALESCE(SUM(sp.amount), 0) as total_paid,
-          (s.total_amount - COALESCE(SUM(sp.amount), 0)) as left_amount,
-          COUNT(DISTINCT sp.id) as payments_count,
-          'sale' as bill_type
-        FROM sales s
-        LEFT JOIN sale_items si ON si.sale_id = s.id
-        LEFT JOIN products pr ON pr.id = si.product_id
-        LEFT JOIN companies c ON c.id = s.company_id
-        LEFT JOIN farmers f ON f.id = s.farmer_id
-        LEFT JOIN customers cus ON cus.id = s.customer_id
-        LEFT JOIN vendors v ON v.id = s.vendor_id
-        LEFT JOIN sale_payments sp ON sp.sale_id = s.id
-        ${salesWhere}
-        GROUP BY s.id, si.id
-        ORDER BY s.created_at DESC
+      // First, get the combined, paginated list of bill IDs
+      const unionSql = `
+        SELECT id, 'sale' as bill_type, created_at FROM sales s ${salesWhere}
+        UNION ALL
+        SELECT id, 'purchase' as bill_type, created_at FROM purchases p ${purchasesWhere}
+        ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `;
+      const unionParams = [...salesParams, ...purchaseParams, parseInt(limit), offset];
 
-      const salesParamsFinal = [...salesParams, parseInt(limit), offset];
+      const paginatedIds = await executeQuery(unionSql, unionParams);
 
-      // Purchases query - Updated to include payments count
-      const purchasesSql = `
-        SELECT
-          p.id as purchase_id,
-          p.bill_no as invoice_no,
-          p.total_amount,
-          p.paid_amount,
-          p.discount_amount as total_discount_amount,
-          p.gst_amount as total_gst_amount,
-          p.party_type,
-          p.created_at,
-          p.bill_date,
-          p.company_id,
-          p.transport as transport_amount,
-          p.taxable_amount,
-          pi.product_id,
-          pi.quantity_in_kg as item_quantity,
-          pi.rate as item_rate,
-          pi.final_amount as item_total,
-          pi.discount_percent as item_discount_percent,
-          pi.discount_amount as item_discount_amount,
-          pi.gst_percent as item_gst_percent,
-          pi.gst_amount as item_gst_amount,
-          pi.unit as item_unit,
-          pr.product_name,
-          pr.hsn_code as product_hsn_code,
-          c.code as company_code,
-          c.name as company_name,
-          CASE
-            WHEN p.party_type = 'vendor' THEN v.vendor_name
-            WHEN p.party_type = 'farmer' THEN f.name
-          END as party_name,
-          CASE
-            WHEN p.party_type = 'vendor' THEN v.firm_name
-            WHEN p.party_type = 'farmer' THEN f.name
-          END as firm_name,
-          COALESCE(SUM(pp.amount), 0) as total_paid,
-          (p.total_amount - COALESCE(SUM(pp.amount), 0)) as left_amount,
-          COUNT(DISTINCT pp.id) as payments_count,
-          'purchase' as bill_type
-        FROM purchases p
-        LEFT JOIN purchase_items pi ON pi.purchase_id = p.id
-        LEFT JOIN products pr ON pr.id = pi.product_id
-        LEFT JOIN companies c ON c.id = p.company_id
-        LEFT JOIN farmers f ON f.id = p.farmer_id
-        LEFT JOIN vendors v ON v.id = p.vendor_id
-        LEFT JOIN purchase_payments pp ON pp.purchases_id = p.id
-        ${purchasesWhere}
-        GROUP BY p.id, pi.id
-        ORDER BY p.created_at DESC
-        LIMIT ? OFFSET ?
-      `;
+      const saleIds = paginatedIds.filter(b => b.bill_type === 'sale').map(b => b.id);
+      const purchaseIds = paginatedIds.filter(b => b.bill_type === 'purchase').map(b => b.id);
 
-      const purchasesParamsFinal = [...purchaseParams, parseInt(limit), offset];
+      let salesResult = [];
+      if (saleIds.length > 0) {
+        const placeholders = saleIds.map(() => '?').join(',');
+        const salesSql = `
+          SELECT
+            s.id as sale_id,
+            s.bill_no as invoice_no,
+            s.total_amount,
+            s.total_discount_amount,
+            s.total_gst as total_gst_amount,
+            s.party_type,
+            s.created_at,
+            s.bill_date,
+            s.company_id,
+            s.other_amount as transport_amount,
+            s.total_taxable,
+            si.product_id,
+            si.qty as item_quantity,
+            si.rate as item_rate,
+            si.net_total as item_total,
+            si.discount_rate as item_discount_percent,
+            si.discount_amount as item_discount_amount,
+            si.gst_percent as item_gst_percent,
+            si.gst_amount as item_gst_amount,
+            si.unit as item_unit,
+            pr.product_name,
+            pr.hsn_code as product_hsn_code,
+            c.code as company_code,
+            c.name as company_name,
+            CASE
+              WHEN s.party_type = 'vendor' THEN v.vendor_name
+              WHEN s.party_type = 'farmer' THEN f.name
+              WHEN s.party_type = 'customer' THEN cus.name
+            END as party_name,
+            CASE
+              WHEN s.party_type = 'vendor' THEN v.firm_name
+              WHEN s.party_type = 'farmer' THEN f.name
+              WHEN s.party_type = 'customer' THEN cus.firm_name
+            END as firm_name,
+            COALESCE(SUM(sp.amount), 0) as total_paid,
+            (s.total_amount - COALESCE(SUM(sp.amount), 0)) as left_amount,
+            COUNT(DISTINCT sp.id) as payments_count,
+            'sale' as bill_type
+          FROM sales s
+          LEFT JOIN sale_items si ON si.sale_id = s.id
+          LEFT JOIN products pr ON pr.id = si.product_id
+          LEFT JOIN companies c ON c.id = s.company_id
+          LEFT JOIN farmers f ON f.id = s.farmer_id
+          LEFT JOIN customers cus ON cus.id = s.customer_id
+          LEFT JOIN vendors v ON v.id = s.vendor_id
+          LEFT JOIN sale_payments sp ON sp.sale_id = s.id
+          WHERE s.id IN (${placeholders})
+          GROUP BY s.id, si.id
+          ORDER BY s.created_at DESC
+        `;
+        salesResult = await executeQuery(salesSql, saleIds);
+      }
+
+      let purchasesResult = [];
+      if (purchaseIds.length > 0) {
+        const placeholders = purchaseIds.map(() => '?').join(',');
+        const purchasesSql = `
+          SELECT
+            p.id as purchase_id,
+            p.bill_no as invoice_no,
+            p.total_amount,
+            p.paid_amount,
+            p.discount_amount as total_discount_amount,
+            p.gst_amount as total_gst_amount,
+            p.party_type,
+            p.created_at,
+            p.bill_date,
+            p.company_id,
+            p.transport as transport_amount,
+            p.taxable_amount,
+            pi.product_id,
+            pi.quantity_in_kg as item_quantity,
+            pi.rate as item_rate,
+            pi.final_amount as item_total,
+            pi.discount_percent as item_discount_percent,
+            pi.discount_amount as item_discount_amount,
+            pi.gst_percent as item_gst_percent,
+            pi.gst_amount as item_gst_amount,
+            pi.unit as item_unit,
+            pr.product_name,
+            pr.hsn_code as product_hsn_code,
+            c.code as company_code,
+            c.name as company_name,
+            CASE
+              WHEN p.party_type = 'vendor' THEN v.vendor_name
+              WHEN p.party_type = 'farmer' THEN f.name
+            END as party_name,
+            CASE
+              WHEN p.party_type = 'vendor' THEN v.firm_name
+              WHEN p.party_type = 'farmer' THEN f.name
+            END as firm_name,
+            COALESCE(SUM(pp.amount), 0) as total_paid,
+            (p.total_amount - COALESCE(SUM(pp.amount), 0)) as left_amount,
+            COUNT(DISTINCT pp.id) as payments_count,
+            'purchase' as bill_type
+          FROM purchases p
+          LEFT JOIN purchase_items pi ON pi.purchase_id = p.id
+          LEFT JOIN products pr ON pr.id = pi.product_id
+          LEFT JOIN companies c ON c.id = p.company_id
+          LEFT JOIN farmers f ON f.id = p.farmer_id
+          LEFT JOIN vendors v ON v.id = p.vendor_id
+          LEFT JOIN purchase_payments pp ON pp.purchases_id = p.id
+          WHERE p.id IN (${placeholders})
+          GROUP BY p.id, pi.id
+          ORDER BY p.created_at DESC
+        `;
+        purchasesResult = await executeQuery(purchasesSql, purchaseIds);
+      }
 
       // Get counts for pagination
       const salesCountSql = `
         SELECT COUNT(DISTINCT s.id) as total
         FROM sales s
-        ${salesWhere.split("GROUP BY")[0]}
+        ${salesWhere}
       `;
 
       const purchasesCountSql = `
         SELECT COUNT(DISTINCT p.id) as total
         FROM purchases p
-        ${purchasesWhere.split("GROUP BY")[0]}
+        ${purchasesWhere}
       `;
 
-      // Execute queries in parallel for better performance
-      const [
-        salesCountResult,
-        purchasesCountResult,
-        salesResult,
-        purchasesResult,
-      ] = await Promise.all([
+      const [salesCountResult, purchasesCountResult] = await Promise.all([
         executeQuery(salesCountSql, salesParams),
         executeQuery(purchasesCountSql, purchaseParams),
-        executeQuery(salesSql, salesParamsFinal),
-        executeQuery(purchasesSql, purchasesParamsFinal),
       ]);
 
       const totalSales = salesCountResult[0]?.total || 0;
@@ -311,7 +320,10 @@ const billController = {
       const salesGrouped = groupItemsByBill(salesResult, "sale");
       const purchasesGrouped = groupItemsByBill(purchasesResult, "purchase");
 
-      const allBills = [...salesGrouped, ...purchasesGrouped];
+      // Merge and sort properly
+      const allBills = [...salesGrouped, ...purchasesGrouped].sort((a, b) => 
+        new Date(b.created_at) - new Date(a.created_at)
+      );
 
       res.status(200).json({
         message: "Successfully fetched bills",
