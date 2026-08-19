@@ -323,7 +323,7 @@ export default function Sidebar({
             symbol="➕"
             decorative={collapsed ? false : true}
           />
-          {!collapsed && "Quotations"}
+          {!collapsed && "Proforma Invoice"}
         </Link>
 
         <Link

@@ -111,6 +111,7 @@ const billController = {
         firmId,
         fromDate,
         toDate,
+        status,
       } = req.query;
 
       const offset = (page - 1) * limit;
@@ -162,6 +163,30 @@ const billController = {
         salesParams.push(toDate);
         purchasesWhere += " AND DATE(p.created_at) <= ?";
         purchaseParams.push(toDate);
+      }
+
+      if (status) {
+        const statusArray = status.split(',');
+        let sCond = [];
+        let pCond = [];
+        if (statusArray.includes('paid')) {
+          sCond.push(`(s.total_amount - COALESCE((SELECT SUM(amount) FROM sale_payments WHERE sale_id = s.id AND status = 'Active'), 0)) <= 0`);
+          pCond.push(`(p.total_amount - COALESCE((SELECT SUM(amount) FROM purchase_payments WHERE purchases_id = p.id AND status = 'Active'), 0)) <= 0`);
+        }
+        if (statusArray.includes('partial')) {
+          sCond.push(`(COALESCE((SELECT SUM(amount) FROM sale_payments WHERE sale_id = s.id AND status = 'Active'), 0) > 0 AND (s.total_amount - COALESCE((SELECT SUM(amount) FROM sale_payments WHERE sale_id = s.id AND status = 'Active'), 0)) > 0)`);
+          pCond.push(`(COALESCE((SELECT SUM(amount) FROM purchase_payments WHERE purchases_id = p.id AND status = 'Active'), 0) > 0 AND (p.total_amount - COALESCE((SELECT SUM(amount) FROM purchase_payments WHERE purchases_id = p.id AND status = 'Active'), 0)) > 0)`);
+        }
+        if (statusArray.includes('unpaid')) {
+          sCond.push(`COALESCE((SELECT SUM(amount) FROM sale_payments WHERE sale_id = s.id AND status = 'Active'), 0) <= 0`);
+          pCond.push(`COALESCE((SELECT SUM(amount) FROM purchase_payments WHERE purchases_id = p.id AND status = 'Active'), 0) <= 0`);
+        }
+        if (sCond.length > 0) {
+          salesWhere += ` AND (${sCond.join(' OR ')})`;
+        }
+        if (pCond.length > 0) {
+          purchasesWhere += ` AND (${pCond.join(' OR ')})`;
+        }
       }
 
       // First, get the combined, paginated list of bill IDs

@@ -58,7 +58,7 @@ const Customer = {
         FROM sale_payments
         GROUP BY customer_id
     ) p ON c.id = p.customer_id
-    ORDER BY c.status, COALESCE(NULLIF(c.firm_name, ''), c.name) ASC
+    ORDER BY c.name ASC
   `;
     db.query(sql, (err, results) => callback(err, results));
   },

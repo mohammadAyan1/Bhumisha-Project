@@ -210,7 +210,7 @@ const Product = {
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.status='Active'
-      ORDER BY c.name, p.product_name
+      ORDER BY p.product_name ASC
     `;
     db.query(sql, cb);
   },

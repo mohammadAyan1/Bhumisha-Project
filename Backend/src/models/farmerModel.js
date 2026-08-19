@@ -81,7 +81,7 @@ const getFarmers = (callback) => {
            b.pan_number, b.account_holder_name, b.bank_name, b.account_number, b.ifsc_code, b.branch_name
     FROM farmers f
     LEFT JOIN farmer_bank_details b ON f.id = b.farmer_id
-    ORDER BY f.status, f.name ASC
+    ORDER BY f.name ASC
   `;
   db.query(query, callback);
 };

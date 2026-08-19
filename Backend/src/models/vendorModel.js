@@ -82,7 +82,7 @@ const getVendors = (callback) => {
       b.pan_number, b.account_holder_name, b.bank_name, b.account_number, b.ifsc_code, b.branch_name
     FROM vendors v
     LEFT JOIN vendor_bank_details b ON v.id = b.vendor_id
-    ORDER BY v.status, COALESCE(NULLIF(v.firm_name, ''), v.vendor_name) ASC
+    ORDER BY v.vendor_name ASC
   `;
   db.query(query, callback);
 };

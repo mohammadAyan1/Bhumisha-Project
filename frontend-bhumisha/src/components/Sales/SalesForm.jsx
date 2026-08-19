@@ -565,9 +565,9 @@ export default function SalesForm({
           productsAPI.getAll(),
         ]);
 
-        const allCustomers = custRes?.data || [];
-        const allVendors = vendRes?.data || [];
-        const allFarmers = farmRes?.data || [];
+        const allCustomers = (custRes?.data || []).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        const allVendors = (vendRes?.data || []).sort((a, b) => (a.vendor_name || "").localeCompare(b.vendor_name || ""));
+        const allFarmers = (farmRes?.data || []).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
         if (!mounted) return;
 
@@ -575,7 +575,9 @@ export default function SalesForm({
         setVendors(allVendors);
         setFarmers(allFarmers);
 
-        const normalized = (prodRes?.data || []).map((p) => ({
+        const normalized = (prodRes?.data || [])
+          .sort((a, b) => (a.product_name || "").localeCompare(b.product_name || ""))
+          .map((p) => ({
           id: p.id,
           product_name: p.product_name,
           hsn_code: p.hsn_code || "",

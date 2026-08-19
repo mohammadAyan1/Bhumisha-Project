@@ -16,9 +16,12 @@ const db = mysql.createPool({
 });
 
 db.getConnection((err, connection) => {
-  if (err) throw err;
-  console.log("MySQL Connection Pool Successful!");
-  connection.release();
+  if (err) {
+    console.error("MySQL Connection Pool Failed on Startup:", err.message);
+  } else {
+    console.log("MySQL Connection Pool Successful!");
+    connection.release();
+  }
 });
 
 module.exports = db;

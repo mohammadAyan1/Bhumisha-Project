@@ -19,6 +19,7 @@ const BillPayment = () => {
     firmId: "",
     fromDate: "",
     toDate: "",
+    status: [],
     page: 1,
     limit: 50,
   });
@@ -64,7 +65,13 @@ const BillPayment = () => {
         filters[key] !== null &&
         filters[key] !== undefined
       ) {
-        cleanedFilters[key] = filters[key];
+        if (key === 'status') {
+          if (filters.status.length > 0) {
+            cleanedFilters[key] = filters.status.join(',');
+          }
+        } else {
+          cleanedFilters[key] = filters[key];
+        }
       }
     });
 
@@ -170,6 +177,19 @@ const BillPayment = () => {
       page: 1, // Reset to first page on filter change
       ...(name === "partyType" && { firmId: "" }), // Clear firm when party type changes
     }));
+  };
+
+  const handleStatusChange = (e) => {
+    const { value, checked } = e.target;
+    setFilters((prev) => {
+      let currentStatus = prev.status || [];
+      if (checked) {
+        currentStatus = [...currentStatus, value];
+      } else {
+        currentStatus = currentStatus.filter((s) => s !== value);
+      }
+      return { ...prev, status: currentStatus, page: 1 };
+    });
   };
 
   const handleSubmitFilters = (e) => {
@@ -320,7 +340,47 @@ const BillPayment = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <div className="flex gap-4 mt-2">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="status"
+                  value="paid"
+                  checked={filters.status?.includes("paid")}
+                  onChange={handleStatusChange}
+                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                />
+                <span className="ml-2 text-sm text-gray-700">Paid</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="status"
+                  value="partial"
+                  checked={filters.status?.includes("partial")}
+                  onChange={handleStatusChange}
+                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                />
+                <span className="ml-2 text-sm text-gray-700">Partial</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="status"
+                  value="unpaid"
+                  checked={filters.status?.includes("unpaid")}
+                  onChange={handleStatusChange}
+                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                />
+                <span className="ml-2 text-sm text-gray-700">Unpaid</span>
+              </label>
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               From Date
