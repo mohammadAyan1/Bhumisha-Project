@@ -27,7 +27,7 @@ jobs:
           
 
           local-dir: ./Backend/
-          server-dir: /backend.bhumishaagro.co.in/
+          server-dir: /softw.bhumishaagro.co.in/
 
           dangerous-clean-slate: false
 

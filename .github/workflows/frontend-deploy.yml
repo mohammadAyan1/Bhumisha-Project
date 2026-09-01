@@ -46,7 +46,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
 
           local-dir: ./frontend-bhumisha/dist/
-          server-dir: /frontend.bhumishaagro.co.in/
+          server-dir: /public_html/
 
           dangerous-clean-slate: false
 
