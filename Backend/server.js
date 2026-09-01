@@ -164,7 +164,6 @@ CREATE TABLE IF NOT EXISTS company_bank_details (
 ) ENGINE=InnoDB;`);
 
     // Add FK column if missing (avoid IF NOT EXISTS for broader MySQL compatibility)
-    // Add FK column if missing (avoid IF NOT EXISTS for broader MySQL compatibility)
     await exec(
       `ALTER TABLE companies ADD COLUMN bank_detail_id INT NULL`
     ).catch(() => { });
