@@ -127,7 +127,7 @@ const Sales = {
 
       // Extract company prefix from code (remove non-alphanumeric)
       // For code like "cmp_01", extract "CMP01"
-      const companyPrefix = code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      const companyPrefix = code.replace(/[^a-zA-Z]/g, "").toUpperCase();
 
       // Get financial year
       const financialYear = getFinancialYear();
@@ -214,7 +214,7 @@ const Sales = {
 
       ///////////////!SECTION
       // Generate new bill number
-      const companyPrefix = code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      const companyPrefix = code.replace(/[^a-zA-Z]/g, "").toUpperCase();
       const financialYear = getFinancialYear(new Date(bill_date || new Date()));
 
       // Get the last sequence number for this company and financial year
@@ -596,16 +596,16 @@ const Sales = {
 
       let cash = Number(cash_received || 0);
       let advance_applied = 0;
-      
+
       if (advance_amount > 0) {
         const remainingBillAmount = Math.max(0, finalTotalAmount - cash);
         if (remainingBillAmount > 0) {
-           advance_applied = Math.min(advance_amount, remainingBillAmount);
-           cash += advance_applied;
-           
-           await conn.execute(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, chosenId]);
-           
-           remarks = (remarks ? remarks + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
+          advance_applied = Math.min(advance_amount, remainingBillAmount);
+          cash += advance_applied;
+
+          await conn.execute(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, chosenId]);
+
+          remarks = (remarks ? remarks + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
         }
       }
 
