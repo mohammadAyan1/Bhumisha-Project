@@ -2147,7 +2147,7 @@ export default function CustomersPage() {
               />
             </div>
 
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <label
                 htmlFor="cust_balance"
                 className="text-sm text-gray-600 mb-1"
@@ -2162,10 +2162,10 @@ export default function CustomersPage() {
                 value={form.balance}
                 onChange={(e) => setForm({ ...form, balance: e.target.value })}
               />
-            </div>
+            </div> */}
 
             {/* Min Balance stays only in form */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <label
                 htmlFor="cust_min_balance"
                 className="text-sm text-gray-600 mb-1"
@@ -2182,7 +2182,7 @@ export default function CustomersPage() {
                   setForm({ ...form, min_balance: e.target.value })
                 }
               />
-            </div>
+            </div> */}
 
             <div className="flex flex-col">
               <label
@@ -2248,7 +2248,7 @@ export default function CustomersPage() {
                   <th className="p-3 border text-left">GST No.</th>
                   <th className="p-3 border text-left">Total Invoiced</th>
                   <th className="p-3 border text-left">Total Paid</th>
-                  <th className="p-3 border text-left">Balance</th>
+                  <th className="p-3 border text-left">Left Amount</th>
                   <th className="p-3 border text-left">Status</th>
                   <th className="p-3 border text-left">Created At</th>
                   <th className="p-3 border text-left">Updated At</th>

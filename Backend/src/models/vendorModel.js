@@ -4,8 +4,8 @@ const createVendor = (vendorData, bankData, callback) => {
   // Use DB defaults if undefined by passing DEFAULT keyword
   const vendorQuery = `
     INSERT INTO vendors
-      (vendor_name, firm_name, gst_no, address, contact_number, status, balance, min_balance)
-    VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, DEFAULT(balance)), COALESCE(?, DEFAULT(min_balance)))
+      (vendor_name, firm_name, gst_no, address, contact_number, status)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
   db.query(
     vendorQuery,
@@ -16,8 +16,8 @@ const createVendor = (vendorData, bankData, callback) => {
       vendorData.address,
       vendorData.contact_number,
       vendorData.status || "active",
-      vendorData.balance, // if undefined -> DEFAULT via COALESCE
-      vendorData.min_balance, // if undefined -> DEFAULT via COALESCE
+      // vendorData.balance, // if undefined -> DEFAULT via COALESCE
+      // vendorData.min_balance, // if undefined -> DEFAULT via COALESCE
     ],
     (err, result) => {
       if (err) return callback(err);
@@ -91,9 +91,7 @@ const getVendors = (callback) => {
 const updateVendor = (vendor_id, vendorData, bankData, callback) => {
   const vendorQuery = `
     UPDATE vendors
-    SET vendor_name=?, firm_name=?, gst_no=?, address=?, contact_number=?, status=?,
-        balance=COALESCE(?, balance),
-        min_balance=COALESCE(?, min_balance)
+    SET vendor_name=?, firm_name=?, gst_no=?, address=?, contact_number=?, status=?
     WHERE id=?
   `;
   db.query(
@@ -105,8 +103,8 @@ const updateVendor = (vendor_id, vendorData, bankData, callback) => {
       vendorData.address,
       vendorData.contact_number,
       vendorData.status,
-      vendorData.balance,
-      vendorData.min_balance,
+      // vendorData.balance,
+      // vendorData.min_balance,
       vendor_id,
     ],
     (err) => {

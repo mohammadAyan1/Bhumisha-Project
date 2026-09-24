@@ -355,7 +355,7 @@ export default function VendorList() {
     { field: "gst_no", headerName: "GST No", flex: 1 },
     { field: "address", headerName: "Address", flex: 1 },
     { field: "contact_number", headerName: "Contact", flex: 1 },
-    {
+    /* {
       field: "balance",
       headerName: "Balance",
       width: 140,
@@ -384,7 +384,7 @@ export default function VendorList() {
         const min = Number(params.row.min_balance ?? 5000);
         return <span className="text-gray-800">{min.toFixed(2)}</span>;
       },
-    },
+    }, */
     {
       field: "status",
       headerName: "Status",

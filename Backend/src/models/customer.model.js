@@ -86,14 +86,14 @@ const Customer = {
       address,
       status,
       gst_no = null,
-      balance = 0,
-      min_balance = 5000,
+      // balance = 0,
+      // min_balance = 5000,
     } = data;
 
     const sql = `
       INSERT INTO customers
-      (name, firm_name, email, phone, address, GST_No, balance, min_balance, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      (name, firm_name, email, phone, address, GST_No, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
     const params = [
       name,
@@ -102,8 +102,8 @@ const Customer = {
       phone || "",
       address || "",
       gst_no || null,
-      num(balance, 0),
-      num(min_balance, 5000),
+      // num(balance, 0),
+      // num(min_balance, 5000),
       status || "Active",
     ];
 
@@ -117,8 +117,8 @@ const Customer = {
         phone: phone || "",
         address: address || "",
         gst_no: gst_no || null,
-        balance: Number(num(balance, 0)).toFixed(2),
-        min_balance: Number(num(min_balance, 5000)).toFixed(2),
+        // balance: Number(num(balance, 0)).toFixed(2),
+        // min_balance: Number(num(min_balance, 5000)).toFixed(2),
         status: status || "Active",
       });
     });
@@ -133,8 +133,8 @@ const Customer = {
       "address",
       "status",
       "gst_no",
-      "balance",
-      "min_balance",
+      // "balance",
+      // "min_balance",
     ];
     const fields = [];
     const params = [];
@@ -142,8 +142,8 @@ const Customer = {
     allowed.forEach((k) => {
       if (data[k] !== undefined) {
         if (k === "balance" || k === "min_balance") {
-          fields.push(`${k === "gst_no" ? "GST_No" : k}=?`);
-          params.push(num(data[k], k === "min_balance" ? 5000 : 0));
+          // fields.push(`${k === "gst_no" ? "GST_No" : k}=?`);
+          // params.push(num(data[k], k === "min_balance" ? 5000 : 0));
         } else if (k === "gst_no") {
           fields.push(`GST_No=?`);
           params.push(data[k] || null);

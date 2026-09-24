@@ -397,7 +397,7 @@ export default function FarmerList({ onEdit }) {
     { field: "village", headerName: "Village", flex: 1 },
     { field: "contact_number", headerName: "Contact", flex: 1 },
     { field: "khasara_number", headerName: "Khasara No.", flex: 1 },
-    {
+    /* {
       field: "balance",
       headerName: "Balance",
       width: 140,
@@ -413,7 +413,7 @@ export default function FarmerList({ onEdit }) {
           </span>
         );
       },
-    },
+    }, */
     {
       field: "status",
       headerName: "Status",

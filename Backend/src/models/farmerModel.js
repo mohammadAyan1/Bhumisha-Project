@@ -4,8 +4,8 @@ const db = require("../config/db");
 const createFarmer = (farmerData, bankData, callback) => {
   const farmerQuery = `
     INSERT INTO farmers
-      (name, father_name, district, tehsil, patwari_halka, village, contact_number, khasara_number, status, balance, min_balance)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, DEFAULT(balance)), COALESCE(?, DEFAULT(min_balance)))
+      (name, father_name, district, tehsil, patwari_halka, village, contact_number, khasara_number, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   db.query(
     farmerQuery,
@@ -19,8 +19,8 @@ const createFarmer = (farmerData, bankData, callback) => {
       farmerData.contact_number,
       farmerData.khasara_number,
       farmerData.status || "Active",
-      farmerData.balance, // undefined => DEFAULT via COALESCE
-      farmerData.min_balance, // undefined => DEFAULT via COALESCE
+      // farmerData.balance, // undefined => DEFAULT via COALESCE
+      // farmerData.min_balance, // undefined => DEFAULT via COALESCE
     ],
     (err, result) => {
       if (err) return callback(err);
@@ -91,9 +91,7 @@ const updateFarmer = (farmer_id, farmerData, bankData, callback) => {
   const farmerQuery = `
   UPDATE farmers
   SET name=?, father_name=?, district=?, tehsil=?, patwari_halka=?, village=?, contact_number=?, khasara_number=?,
-      status=COALESCE(?, status),
-      balance=COALESCE(?, balance),
-      min_balance=COALESCE(?, min_balance)
+      status=COALESCE(?, status)
   WHERE id=?
 `;
   db.query(
@@ -109,8 +107,8 @@ const updateFarmer = (farmer_id, farmerData, bankData, callback) => {
       farmerData.khasara_number,
       // status: allow undefined to keep existing
       farmerData.status,
-      farmerData.balance,
-      farmerData.min_balance,
+      // farmerData.balance,
+      // farmerData.min_balance,
       farmer_id,
     ]
     // ...

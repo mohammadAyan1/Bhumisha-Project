@@ -221,7 +221,7 @@ export default function FarmerRegister({ selectedFarmer, onClose }) {
           />
         </div>
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label htmlFor="balance" className="text-sm font-medium mb-1">
             Balance
           </label>
@@ -236,9 +236,9 @@ export default function FarmerRegister({ selectedFarmer, onClose }) {
             placeholder="Balance"
             className="border p-2 rounded-lg"
           />
-        </div>
+        </div> */}
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label htmlFor="min_balance" className="text-sm font-medium mb-1">
             Min Balance
           </label>
@@ -253,7 +253,7 @@ export default function FarmerRegister({ selectedFarmer, onClose }) {
             placeholder="Min Balance"
             className="border p-2 rounded-lg"
           />
-        </div>
+        </div> */}
 
         <div className="flex flex-col md:col-span-2">
           <label htmlFor="status" className="text-sm font-medium mb-1">

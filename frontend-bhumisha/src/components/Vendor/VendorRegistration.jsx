@@ -227,7 +227,7 @@ const VendorRegistration = ({ onAddVendor }) => {
         </div>
 
         {/* ADDED: Balance */}
-        <div>
+        {/* <div>
           <label className="block font-medium mb-1">Balance</label>
           <input
             type="number"
@@ -239,10 +239,10 @@ const VendorRegistration = ({ onAddVendor }) => {
             className="w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="0.00"
           />
-        </div>
+        </div> */}
 
         {/* ADDED: Minimum Balance */}
-        <div>
+        {/* <div>
           <label className="block font-medium mb-1">Minimum Balance</label>
           <input
             type="number"
@@ -255,7 +255,7 @@ const VendorRegistration = ({ onAddVendor }) => {
             placeholder="5000.00"
             required
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Bank Details */}
