@@ -503,7 +503,7 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
       sortable: false,
       renderCell: (params) => {
         const idx = filtered.findIndex((r) => r.id === params.row.id);
-        return idx + 1; // Global index instead of page index
+        return filtered.length - idx; // Descending index
       },
     },
     {
