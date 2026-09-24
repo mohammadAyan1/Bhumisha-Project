@@ -91,6 +91,24 @@ async function ensureTotalDiscountColumn(conn, tableName) {
   }
 }
 
+// Helper function to ensure transport columns exist
+async function ensureTransportColumns(conn, tableName) {
+  const columns = ['eway_bill_no', 'transport', 'transport_id', 'vehicle_no'];
+  for (const col of columns) {
+    try {
+      const [colCheck] = await conn.execute(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [tableName, col]
+      );
+      if (colCheck[0].count === 0) {
+        await conn.execute(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${col}\` VARCHAR(255) NULL`);
+      }
+    } catch (error) {
+      console.error(`Error ensuring ${col} column for ${tableName}:`, error);
+    }
+  }
+}
+
 const getConnection = async () => {
   return await pool.promise().getConnection();
 };
@@ -175,6 +193,10 @@ const Sales = {
       status = "Active",
       items = [],
       cash_received = 0,
+      eway_bill_no = null,
+      transport = null,
+      transport_id = null,
+      vehicle_no = null,
     } = payload;
 
     if (!bill_date) throw new Error("bill_date is required");
@@ -299,6 +321,9 @@ const Sales = {
       `);
       }
 
+      await ensureTransportColumns(conn, salesTable);
+      await ensureTransportColumns(conn, 'sales');
+
       // Bill no generation - IMPROVED LOGIC
       // let finalBillNo = bill_no;
       let salesBill;
@@ -328,8 +353,9 @@ const Sales = {
         `INSERT INTO \`${salesTable}\`
        (customer_id, vendor_id, farmer_id, party_type, buyer_type, bill_no, bill_date, 
         total_taxable, total_gst, total_discount_amount, total_amount, 
-        payment_status, payment_method, remarks, other_amount, other_note, status, reference_id,paid_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, ?, ?, ?, ?, ?, ?, NULL,?)`,
+        payment_status, payment_method, remarks, other_amount, other_note, status, reference_id, paid_amount,
+        eway_bill_no, transport, transport_id, vehicle_no)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
         [
           party_type === "customer" ? chosenId : null,
           party_type === "vendor" ? chosenId : null,
@@ -345,6 +371,10 @@ const Sales = {
           other_note || null,
           status,
           cash_received,
+          eway_bill_no,
+          transport,
+          transport_id,
+          vehicle_no,
         ]
       );
       const company_sale_id = companySaleRes.insertId;
@@ -354,8 +384,9 @@ const Sales = {
         `INSERT INTO sales
        (customer_id, vendor_id, farmer_id, party_type, buyer_type, bill_no, bill_date, 
         total_taxable, total_gst, total_discount_amount, total_amount, 
-        payment_status, payment_method, remarks, other_amount, other_note, status, company_id, reference_id,paid_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+        payment_status, payment_method, remarks, other_amount, other_note, status, company_id, reference_id, paid_amount,
+        eway_bill_no, transport, transport_id, vehicle_no)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           party_type === "customer" ? chosenId : null,
           party_type === "vendor" ? chosenId : null,
@@ -373,6 +404,10 @@ const Sales = {
           company_id,
           company_sale_id, // reference_id points to company table record
           cash_received,
+          eway_bill_no,
+          transport,
+          transport_id,
+          vehicle_no,
         ]
       );
       const master_sale_id = masterSaleRes.insertId;
@@ -731,6 +766,10 @@ const Sales = {
       status = "Active",
       items = [],
       cash_received = 0,
+      eway_bill_no = null,
+      transport = null,
+      transport_id = null,
+      vehicle_no = null,
     } = payload;
 
     if (!bill_date) throw new Error("bill_date is required");
@@ -1012,6 +1051,10 @@ const Sales = {
        other_note = ?,
        status = ?,
        paid_amount = ?,
+       eway_bill_no = ?,
+       transport = ?,
+       transport_id = ?,
+       vehicle_no = ?,
        updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
         [
@@ -1033,6 +1076,10 @@ const Sales = {
           other_note || null,
           status || "Active",
           cash_received.toFixed(2),
+          eway_bill_no,
+          transport,
+          transport_id,
+          vehicle_no,
           sale_id,
         ]
       );
@@ -1059,6 +1106,10 @@ const Sales = {
        status = ?,
        company_id = ?,
        paid_amount = ?,
+       eway_bill_no = ?,
+       transport = ?,
+       transport_id = ?,
+       vehicle_no = ?,
        updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
         [
@@ -1081,6 +1132,10 @@ const Sales = {
           status || "Active",
           company_id,
           cash_received.toFixed(2),
+          eway_bill_no,
+          transport,
+          transport_id,
+          vehicle_no,
           masterSaleId,
         ]
       );

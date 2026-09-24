@@ -115,6 +115,10 @@ export default function SalesForm({
     buyer_type: "Retailer",
     other_amount: 0,
     other_note: "",
+    eway_bill_no: "",
+    transport: "",
+    transport_id: "",
+    vehicle_no: "",
   });
   const [rows, setRows] = useState([{ ...emptyRow }]);
   const [errors, setErrors] = useState({ header: {}, rows: {} });
@@ -651,6 +655,10 @@ export default function SalesForm({
             other_note: sale.other_note || "",
             party_balance: Number(sale.party_balance ?? 0),
             party_min_balance: Number(sale.party_min_balance ?? 0),
+            eway_bill_no: sale.eway_bill_no || "",
+            transport: sale.transport || "",
+            transport_id: sale.transport_id || "",
+            vehicle_no: sale.vehicle_no || "",
           }));
 
           const mapped = (sale.items || []).map((r) => {
@@ -764,6 +772,10 @@ export default function SalesForm({
               party_min_balance: Number(selectedParty?.min_balance ?? 0),
               other_amount: Number(so.other_amount || 0),
               other_note: so.other_note || "",
+              eway_bill_no: so.eway_bill_no || "",
+              transport: so.transport || "",
+              transport_id: so.transport_id || "",
+              vehicle_no: so.vehicle_no || "",
             }));
 
             const mapped = (so.items || []).map((r) => {
@@ -1323,6 +1335,10 @@ export default function SalesForm({
         remarks: header.terms_condition || "",
         other_amount: Number(header.other_amount || 0),
         other_note: header.other_note || "",
+        eway_bill_no: header.eway_bill_no || "",
+        transport: header.transport || "",
+        transport_id: header.transport_id || "",
+        vehicle_no: header.vehicle_no || "",
         company_id: comapanyName,
         cash_received: Number(header.cash_received || 0),
         linked_so_id: soId ? Number(soId) : null,
@@ -1439,6 +1455,10 @@ export default function SalesForm({
         buyer_type: "Retailer",
         other_amount: 0,
         other_note: "",
+        eway_bill_no: "",
+        transport: "",
+        transport_id: "",
+        vehicle_no: "",
       });
       setRows([{ ...emptyRow }]);
       setErrors({ header: {}, rows: {} });
@@ -1837,6 +1857,49 @@ export default function SalesForm({
                       : "Unpaid"}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Transport Fields */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600 mb-1">E-way bill no.</label>
+                <input
+                  className="border p-2 rounded-lg"
+                  placeholder="E-way bill no."
+                  value={header.eway_bill_no}
+                  onChange={(e) => setHeader((p) => ({ ...p, eway_bill_no: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600 mb-1">Transport</label>
+                <input
+                  className="border p-2 rounded-lg"
+                  placeholder="Transport"
+                  value={header.transport}
+                  onChange={(e) => setHeader((p) => ({ ...p, transport: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600 mb-1">Transport ID</label>
+                <input
+                  className="border p-2 rounded-lg"
+                  placeholder="Transport ID"
+                  value={header.transport_id}
+                  onChange={(e) => setHeader((p) => ({ ...p, transport_id: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-600 mb-1">Vehicle No.</label>
+                <input
+                  className="border p-2 rounded-lg"
+                  placeholder="Vehicle No."
+                  value={header.vehicle_no}
+                  onChange={(e) => setHeader((p) => ({ ...p, vehicle_no: e.target.value }))}
+                />
               </div>
             </div>
           </div>

@@ -2257,10 +2257,12 @@ export default function CustomersPage() {
               </thead>
               <tbody>
                 {currentPageCustomers.map((r, idx) => {
-                  const bal = Number(r.balance ?? 0);
+                  const totalInvoiced = Number(r.total_invoiced ?? 0);
+                  const totalPaid = Number(r.total_paid ?? 0);
+                  const bal = totalInvoiced - totalPaid;
                   const minBal = Number(r.min_balance ?? 0);
                   const isNeg = bal < 0;
-                  const isOverMin = bal >= minBal;
+                  const isOverMin = minBal > 0 && bal >= minBal;
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
                       <td className="p-3 border">
