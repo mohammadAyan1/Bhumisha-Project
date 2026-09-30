@@ -55,6 +55,10 @@ const SalesController = {
         other_amount = 0,
         other_note = null,
         cash_received = 0,
+        eway_bill_no = null,
+        transport = null,
+        transport_id = null,
+        vehicle_no = null,
       } = req.body;
 
       const buyer_type = req.body.buyer_type?.toLowerCase().replace(/\s+/g, "");
@@ -98,6 +102,10 @@ const SalesController = {
           other_note,
           items,
           cash_received: Number(cash_received || 0),
+          eway_bill_no,
+          transport,
+          transport_id,
+          vehicle_no,
         },
         code
       );
@@ -294,6 +302,10 @@ const SalesController = {
         other_amount = 0,
         other_note = null,
         cash_received = 0,
+        eway_bill_no = null,
+        transport = null,
+        transport_id = null,
+        vehicle_no = null,
       } = req.body;
 
       // Validate required fields
@@ -599,6 +611,10 @@ const SalesController = {
          other_note = ?,
          status = ?,
          paid_amount = ?,
+         eway_bill_no = ?,
+         transport = ?,
+         transport_id = ?,
+         vehicle_no = ?,
          updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
           [
@@ -620,6 +636,10 @@ const SalesController = {
             other_note || null,
             status || "Active",
             cash_received.toFixed(2),
+            eway_bill_no,
+            transport,
+            transport_id,
+            vehicle_no,
             sale_id,
           ]
         );
@@ -647,6 +667,10 @@ const SalesController = {
          status = ?,
          company_id = ?,
          paid_amount = ?,
+         eway_bill_no = ?,
+         transport = ?,
+         transport_id = ?,
+         vehicle_no = ?,
          updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
           [
@@ -669,6 +693,10 @@ const SalesController = {
             status || "Active",
             company_id,
             cash_received.toFixed(2),
+            eway_bill_no,
+            transport,
+            transport_id,
+            vehicle_no,
             masterSaleId,
           ]
         );

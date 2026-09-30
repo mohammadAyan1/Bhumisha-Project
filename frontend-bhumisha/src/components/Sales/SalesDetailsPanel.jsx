@@ -217,6 +217,24 @@ export default function SalesDetailsPanel({ id, onClose }) {
                     {sale.total_amount || "-"}
                   </div>
                 </div>
+                
+                {/* Transport fields */}
+                <div>
+                  <div className="text-gray-500">E-way Bill No.</div>
+                  <div className="font-semibold">{sale.eway_bill_no || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Transport</div>
+                  <div className="font-semibold">{sale.transport || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Transport ID</div>
+                  <div className="font-semibold">{sale.transport_id || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">Vehicle No.</div>
+                  <div className="font-semibold">{sale.vehicle_no || "-"}</div>
+                </div>
               </div>
 
               {/* Items */}

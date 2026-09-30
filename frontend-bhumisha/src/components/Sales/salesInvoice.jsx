@@ -589,7 +589,7 @@ ${url}`;
                 <div className="px-1 py-0.5 border-b border-r border-black">
                   <div>Transport</div>
                   <div className="font-semibold text-[9px]">
-                    {safe(sale.transport_name, "")}
+                    {safe(sale.transport, "")}
                   </div>
                 </div>
                 <div className="px-1 py-0.5 border-b border-r border-black">
