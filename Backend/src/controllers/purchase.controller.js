@@ -93,7 +93,7 @@ const purchaseController = {
         return res.status(400).json({ error: "Invalid data format" });
       }
 
-      const {
+      let {
         party_type,
         vendor_id,
         farmer_id,
@@ -611,19 +611,19 @@ const purchaseController = {
       const partyTableForAdvance = party_type === 'vendor' ? 'vendors' : 'farmers';
       const [partyRow] = await connection.query(`SELECT advance_amount FROM ${partyTableForAdvance} WHERE id = ?`, [resolvedVendorId || resolvedFarmerId]);
       const advance_amount = partyRow.length ? Number(partyRow[0].advance_amount || 0) : 0;
-      
+
       let cash = Number(paid_amount || 0);
       let advance_applied = 0;
-      
+
       if (advance_amount > 0) {
         const remainingBillAmount = Math.max(0, finalTotalAmount - cash);
         if (remainingBillAmount > 0) {
-           advance_applied = Math.min(advance_amount, remainingBillAmount);
-           cash += advance_applied;
-           
-           await connection.query(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, resolvedVendorId || resolvedFarmerId]);
-           
-           payment_note = (payment_note ? payment_note + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
+          advance_applied = Math.min(advance_amount, remainingBillAmount);
+          cash += advance_applied;
+
+          await connection.query(`UPDATE ${partyTableForAdvance} SET advance_amount = advance_amount - ? WHERE id = ?`, [advance_applied, resolvedVendorId || resolvedFarmerId]);
+
+          payment_note = (payment_note ? payment_note + " | " : "") + `Auto-deducted ₹${advance_applied} from advance`;
         }
       }
       paid_amount = cash;
@@ -1078,7 +1078,7 @@ const purchaseController = {
     } catch (err) {
       try {
         await connection.query("ROLLBACK");
-      } catch {}
+      } catch { }
       console.error("Purchase creation error:", err);
       return res
         .status(400)
@@ -1478,11 +1478,9 @@ const purchaseController = {
                 if (updated < 0) {
                   await connection.query("ROLLBACK");
                   return res.status(400).json({
-                    error: `stock would go negative for product ${prodId}. Current: ${
-                      curr / 1000
-                    }kg, Trying to remove: ${
-                      Math.abs(quantityDifferenceGrams) / 1000
-                    }kg`,
+                    error: `stock would go negative for product ${prodId}. Current: ${curr / 1000
+                      }kg, Trying to remove: ${Math.abs(quantityDifferenceGrams) / 1000
+                      }kg`,
                   });
                 }
 
@@ -1569,9 +1567,8 @@ const purchaseController = {
             if (updated < 0) {
               await connection.query("ROLLBACK");
               return res.status(400).json({
-                error: `stock would go negative for product ${prodId}. Current: ${
-                  curr / 1000
-                }kg, Trying to add: ${incGrams / 1000}kg`,
+                error: `stock would go negative for product ${prodId}. Current: ${curr / 1000
+                  }kg, Trying to add: ${incGrams / 1000}kg`,
               });
             }
 
@@ -1701,11 +1698,9 @@ const purchaseController = {
                   if (updated < 0) {
                     await connection.query("ROLLBACK");
                     return res.status(400).json({
-                      error: `stock would go negative for product ${
-                        r.product_id
-                      } when deleting item. Current: ${
-                        curr / 1000
-                      }kg, Trying to remove: ${prevQuantityGrams / 1000}kg`,
+                      error: `stock would go negative for product ${r.product_id
+                        } when deleting item. Current: ${curr / 1000
+                        }kg, Trying to remove: ${prevQuantityGrams / 1000}kg`,
                     });
                   }
 
@@ -1751,7 +1746,7 @@ const purchaseController = {
     } catch (err) {
       try {
         await connection.query("ROLLBACK");
-      } catch {}
+      } catch { }
       console.error("Purchase update error:", err);
       return res
         .status(400)
@@ -2133,7 +2128,7 @@ const purchaseController = {
     } catch (err) {
       try {
         await connection.query("ROLLBACK");
-      } catch {}
+      } catch { }
       console.error("Purchase delete error:", err);
       res.status(500).json({ error: err.message });
     }
