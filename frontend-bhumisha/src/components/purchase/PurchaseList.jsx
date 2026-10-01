@@ -323,7 +323,7 @@ import ScaleIcon from "@mui/icons-material/Scale";
 import { fetchPurchases } from "../../features/purchase/purchaseSlice";
 import PurchaseDetailsPanel from "./PurchaseDetailsPanel";
 import { toast } from "react-toastify";
-import purchaseAPI from "../../axios/purchaseAPI";
+import purchaseAPI from "../../axios/purchaseApi";
 
 // Unit conversion constants (all rates are per kg)
 const UNIT_CONVERSIONS = {
@@ -656,11 +656,10 @@ export default function PurchaseList({ reload }) {
                 <Chip
                   label={partyType}
                   size="small"
-                  className={`text-xs ${
-                    partyType === "farmer"
+                  className={`text-xs ${partyType === "farmer"
                       ? "bg-emerald-100 text-emerald-700"
                       : "bg-blue-100 text-blue-700"
-                  }`}
+                    }`}
                 />
               )}
             </div>
@@ -749,7 +748,7 @@ export default function PurchaseList({ reload }) {
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          
+
           {(params.row.status || "Active") === "Inactive" ? (
             <IconButton
               title="Restore"
@@ -873,14 +872,14 @@ export default function PurchaseList({ reload }) {
 
         <div>
           <label className="block text-sm text-gray-700 mb-1">From Date</label>
-          <CustomDatePicker  value={fromDate} onChange={(e) => setFromDate(e.target.value)}
+          <CustomDatePicker value={fromDate} onChange={(e) => setFromDate(e.target.value)}
             className="border rounded-lg p-2 w-full"
             disabled={!filterByDate}
           />
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1">To Date</label>
-          <CustomDatePicker  value={toDate} onChange={(e) => setToDate(e.target.value)}
+          <CustomDatePicker value={toDate} onChange={(e) => setToDate(e.target.value)}
             className="border rounded-lg p-2 w-full"
             disabled={!filterByDate}
           />
@@ -1053,11 +1052,10 @@ export default function PurchaseList({ reload }) {
                   buttons.push(
                     <button
                       key={1}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        1 === page
+                      className={`px-3 py-1.5 rounded-lg transition ${1 === page
                           ? "bg-blue-600 text-white font-medium"
                           : "bg-gray-200 hover:bg-gray-300"
-                      }`}
+                        }`}
                       onClick={() => handlePageChange(1)}
                     >
                       1
@@ -1077,11 +1075,10 @@ export default function PurchaseList({ reload }) {
                   buttons.push(
                     <button
                       key={i}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        i === page
+                      className={`px-3 py-1.5 rounded-lg transition ${i === page
                           ? "bg-blue-600 text-white font-medium"
                           : "bg-gray-200 hover:bg-gray-300"
-                      }`}
+                        }`}
                       onClick={() => handlePageChange(i)}
                     >
                       {i}
@@ -1101,11 +1098,10 @@ export default function PurchaseList({ reload }) {
                   buttons.push(
                     <button
                       key={totalPages}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        totalPages === page
+                      className={`px-3 py-1.5 rounded-lg transition ${totalPages === page
                           ? "bg-blue-600 text-white font-medium"
                           : "bg-gray-200 hover:bg-gray-300"
-                      }`}
+                        }`}
                       onClick={() => handlePageChange(totalPages)}
                     >
                       {totalPages}
