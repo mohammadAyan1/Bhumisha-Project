@@ -34,7 +34,10 @@ const PurchaseAPI = {
   update: (id, formData) => api.put(`/purchase/${id}`, formData, withCompany()),
 
   // DELETE (if supported backend-side)
-  delete: (id) => api.delete(`/purchase/${id}`, withCompany()),
+  delete: (id, data) => api.delete(`/purchase/${id}`, { ...withCompany(), data }),
+
+  // ACTIVATE
+  activate: (id) => api.put(`/purchase/${id}/activate`, null, withCompany()),
 
   // Prefill from PO for create flow
   getPOForPurchase: (poId) =>

@@ -417,6 +417,7 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10); // Changed from constant to state
   const [partyType, setPartyType] = useState("all"); // all | customer | vendor | farmer
+  const [statusFilter, setStatusFilter] = useState("Active"); // Active | Inactive
 
   const load = async () => {
     setLoading(true);
@@ -438,6 +439,7 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
   const filtered = useMemo(() => {
     const t = q.toLowerCase();
     return rows
+      .filter((r) => r.status === statusFilter)
       .filter((r) =>
         partyType === "all"
           ? true
@@ -448,7 +450,7 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(t))
       );
-  }, [rows, q, partyType]);
+  }, [rows, q, partyType, statusFilter]);
 
   const totalRows = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -472,14 +474,33 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
   );
 
   const onDelete = async (id) => {
-    if (!confirm("Delete this sale?")) return;
+    const reason = window.prompt("Reason for deleting this sale:");
+    if (reason === null) return; // Cancelled
+    if (reason.trim() === "") {
+      toast.error("Reason is required to delete.");
+      return;
+    }
     setLoading(true);
     try {
-      await salesAPI.delete(id);
+      await salesAPI.delete(id, { delete_reason: reason });
       toast.success("Sale deleted");
       await load();
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to delete");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onActivate = async (id) => {
+    if (!confirm("Reactivate this sale?")) return;
+    setLoading(true);
+    try {
+      await salesAPI.activate(id);
+      toast.success("Sale reactivated");
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to reactivate");
     } finally {
       setLoading(false);
     }
@@ -583,6 +604,7 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
     },
     { field: "payment_method", headerName: "Method", width: 120 },
     { field: "status", headerName: "Status", width: 120 },
+    ...(statusFilter === "Inactive" ? [{ field: "delete_reason", headerName: "Delete Reason", width: 200 }] : []),
     {
       field: "actions",
       headerName: "Actions",
@@ -605,13 +627,23 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
             <EditIcon />
           </IconButton>
 
-          <IconButton
-            title="Delete"
-            color="error"
-            onClick={() => onDelete(params.row.id)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          {params.row.status === "Inactive" ? (
+            <IconButton
+              title="Restore"
+              color="success"
+              onClick={() => onActivate(params.row.id)}
+            >
+              <RefreshIcon />
+            </IconButton>
+          ) : (
+            <IconButton
+              title="Delete"
+              color="error"
+              onClick={() => onDelete(params.row.id)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
 
           <IconButton
             title="Invoice"
@@ -650,6 +682,20 @@ export default function SalesList({ onEdit, onCreate, onDetails }) {
         <h2 className="text-2xl font-bold text-gray-800">Sales</h2>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
+            <div className="flex bg-gray-100 rounded p-1 border">
+              <button
+                className={`px-3 py-1 text-sm rounded ${statusFilter === "Active" ? "bg-white shadow text-blue-600 font-medium" : "text-gray-600 hover:bg-gray-200"}`}
+                onClick={() => { setStatusFilter("Active"); setPage(1); }}
+              >
+                Active
+              </button>
+              <button
+                className={`px-3 py-1 text-sm rounded ${statusFilter === "Inactive" ? "bg-white shadow text-blue-600 font-medium" : "text-gray-600 hover:bg-gray-200"}`}
+                onClick={() => { setStatusFilter("Inactive"); setPage(1); }}
+              >
+                Inactive
+              </button>
+            </div>
             <select
               className="border rounded px-2 py-2"
               value={partyType}

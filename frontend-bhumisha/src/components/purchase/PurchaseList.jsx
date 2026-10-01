@@ -316,10 +316,14 @@ import DataTable from "../DataTable/DataTable";
 import { IconButton, Chip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import DeleteIcon from "@mui/icons-material/Delete";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ScaleIcon from "@mui/icons-material/Scale";
 import { fetchPurchases } from "../../features/purchase/purchaseSlice";
 import PurchaseDetailsPanel from "./PurchaseDetailsPanel";
+import { toast } from "react-toastify";
+import purchaseAPI from "../../axios/purchaseAPI";
 
 // Unit conversion constants (all rates are per kg)
 const UNIT_CONVERSIONS = {
@@ -450,11 +454,39 @@ export default function PurchaseList({ reload }) {
 
   const [viewPurchaseId, setViewPurchaseId] = useState(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Active");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10); // Changed from constant to state
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [filterByDate, setFilterByDate] = useState(false);
+
+  const onDelete = async (id) => {
+    const reason = window.prompt("Reason for deleting this purchase:");
+    if (reason === null) return;
+    if (reason.trim() === "") {
+      toast.error("Reason is required to delete.");
+      return;
+    }
+    try {
+      await purchaseAPI.delete(id, { delete_reason: reason });
+      toast.success("Purchase deleted");
+      dispatch(fetchPurchases());
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to delete");
+    }
+  };
+
+  const onActivate = async (id) => {
+    if (!confirm("Reactivate this purchase?")) return;
+    try {
+      await purchaseAPI.activate(id);
+      toast.success("Purchase reactivated");
+      dispatch(fetchPurchases());
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to reactivate");
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchPurchases());
@@ -469,16 +501,17 @@ export default function PurchaseList({ reload }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [viewPurchaseId]);
 
-  // 🔍 Filter by search term
+  // 🔍 Filter by search term and status
   const searched = useMemo(() => {
-    if (!search) return purchases;
+    const activePurchases = purchases.filter((p) => (p.status || "Active") === statusFilter);
+    if (!search) return activePurchases;
     const term = search.toLowerCase();
-    return purchases.filter((p) =>
+    return activePurchases.filter((p) =>
       [p.bill_no, p.party_name, p.gst_no, p.total_amount, p.transport_name]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term))
     );
-  }, [purchases, search]);
+  }, [purchases, search, statusFilter]);
 
   // 📅 Filter by date range
   const filtered = useMemo(() => {
@@ -690,10 +723,11 @@ export default function PurchaseList({ reload }) {
           <span className="text-gray-400 text-sm px-2 py-1">No Bill</span>
         ),
     },
+    ...(statusFilter === "Inactive" ? [{ field: "delete_reason", headerName: "Delete Reason", width: 200 }] : []),
     {
       field: "actions",
       headerName: "Actions",
-      width: 120,
+      width: 160,
       sortable: false,
       renderCell: (params) => (
         <div className="flex gap-2">
@@ -715,6 +749,28 @@ export default function PurchaseList({ reload }) {
           >
             <EditIcon fontSize="small" />
           </IconButton>
+          
+          {(params.row.status || "Active") === "Inactive" ? (
+            <IconButton
+              title="Restore"
+              color="success"
+              size="small"
+              className="bg-green-50 hover:bg-green-100"
+              onClick={() => onActivate(params.row.id)}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          ) : (
+            <IconButton
+              title="Delete"
+              color="error"
+              size="small"
+              className="bg-red-50 hover:bg-red-100"
+              onClick={() => onDelete(params.row.id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
         </div>
       ),
     },
@@ -754,7 +810,21 @@ export default function PurchaseList({ reload }) {
         </div>
 
         {/* Search Box */}
-        <div className="mt-4 md:mt-0">
+        <div className="mt-4 md:mt-0 flex gap-2">
+          <div className="flex bg-gray-100 rounded p-1 border">
+            <button
+              className={`px-3 py-1 text-sm rounded ${statusFilter === "Active" ? "bg-white shadow text-blue-600 font-medium" : "text-gray-600 hover:bg-gray-200"}`}
+              onClick={() => { setStatusFilter("Active"); setPage(1); }}
+            >
+              Active
+            </button>
+            <button
+              className={`px-3 py-1 text-sm rounded ${statusFilter === "Inactive" ? "bg-white shadow text-blue-600 font-medium" : "text-gray-600 hover:bg-gray-200"}`}
+              onClick={() => { setStatusFilter("Inactive"); setPage(1); }}
+            >
+              Inactive
+            </button>
+          </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg

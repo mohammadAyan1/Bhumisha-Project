@@ -1275,22 +1275,109 @@ const Sales = {
     }
   },
 
-  // Delete sale (no stock restore by choice)
-  delete: async (id, code) => {
+  // Soft delete sale (no stock restore by choice)
+  delete: async (id, code, delete_reason) => {
     const conn = await Sales.getConnection();
     try {
       await conn.beginTransaction();
       const salesTable = tn(code, "sales");
       const saleItemsTable = tn(code, "sale_items");
-      await conn.execute(`DELETE FROM \`${saleItemsTable}\` WHERE sale_id=?`, [
-        id,
-      ]);
-      const [res] = await conn.execute(
-        `DELETE FROM \`${salesTable}\` WHERE id=?`,
+      
+      // Ensure delete_reason column exists in company sales table
+      const [colCheck] = await conn.execute(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'delete_reason'`, 
+        [salesTable]
+      );
+      if (colCheck[0].count === 0) {
+        await conn.execute(`ALTER TABLE \`${salesTable}\` ADD COLUMN delete_reason TEXT NULL`);
+      }
+      
+      // Ensure delete_reason column exists in master sales table
+      const [masterColCheck] = await conn.execute(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sales' AND COLUMN_NAME = 'delete_reason'`
+      );
+      if (masterColCheck[0].count === 0) {
+        await conn.execute(`ALTER TABLE sales ADD COLUMN delete_reason TEXT NULL`);
+      }
+
+      // Fetch the sale to get master reference_id
+      const [existingSaleRows] = await conn.execute(
+        `SELECT reference_id FROM \`${salesTable}\` WHERE id=?`, 
         [id]
       );
-      await conn.commit();
-      return res;
+      
+      if (existingSaleRows.length > 0) {
+        const masterSaleId = existingSaleRows[0].reference_id;
+
+        await conn.execute(`UPDATE \`${saleItemsTable}\` SET status='Inactive' WHERE sale_id=?`, [id]);
+        const [res] = await conn.execute(`UPDATE \`${salesTable}\` SET status='Inactive', delete_reason=? WHERE id=?`, [delete_reason || null, id]);
+        
+        if (masterSaleId) {
+          await conn.execute(`UPDATE sale_items SET status='Inactive' WHERE sale_id=?`, [masterSaleId]);
+          await conn.execute(`UPDATE sales SET status='Inactive', delete_reason=? WHERE id=?`, [delete_reason || null, masterSaleId]);
+        }
+        
+        await conn.commit();
+        return res;
+      } else {
+        await conn.commit();
+        return { affectedRows: 0 };
+      }
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      if (conn) { try { if (typeof conn.release === 'function') { conn.release(); } else if (typeof conn.end === 'function') { conn.end(); } } catch (e) { if (typeof conn.end === 'function') { conn.end(); } } }
+    }
+  },
+
+  // Activate sale
+  activate: async (id, code) => {
+    const conn = await Sales.getConnection();
+    try {
+      await conn.beginTransaction();
+      const salesTable = tn(code, "sales");
+      const saleItemsTable = tn(code, "sale_items");
+      
+      // Ensure delete_reason column exists in company sales table
+      const [colCheck] = await conn.execute(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'delete_reason'`, 
+        [salesTable]
+      );
+      if (colCheck[0].count === 0) {
+        await conn.execute(`ALTER TABLE \`${salesTable}\` ADD COLUMN delete_reason TEXT NULL`);
+      }
+      
+      // Ensure delete_reason column exists in master sales table
+      const [masterColCheck] = await conn.execute(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sales' AND COLUMN_NAME = 'delete_reason'`
+      );
+      if (masterColCheck[0].count === 0) {
+        await conn.execute(`ALTER TABLE sales ADD COLUMN delete_reason TEXT NULL`);
+      }
+
+      const [existingSaleRows] = await conn.execute(
+        `SELECT reference_id FROM \`${salesTable}\` WHERE id=?`, 
+        [id]
+      );
+      
+      if (existingSaleRows.length > 0) {
+        const masterSaleId = existingSaleRows[0].reference_id;
+
+        await conn.execute(`UPDATE \`${saleItemsTable}\` SET status='Active' WHERE sale_id=?`, [id]);
+        const [res] = await conn.execute(`UPDATE \`${salesTable}\` SET status='Active', delete_reason=NULL WHERE id=?`, [id]);
+        
+        if (masterSaleId) {
+          await conn.execute(`UPDATE sale_items SET status='Active' WHERE sale_id=?`, [masterSaleId]);
+          await conn.execute(`UPDATE sales SET status='Active', delete_reason=NULL WHERE id=?`, [masterSaleId]);
+        }
+        
+        await conn.commit();
+        return res;
+      } else {
+        await conn.commit();
+        return { affectedRows: 0 };
+      }
     } catch (e) {
       await conn.rollback();
       throw e;

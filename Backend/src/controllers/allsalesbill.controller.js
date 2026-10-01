@@ -37,6 +37,7 @@ const allSalesBillController = {
           LEFT JOIN vendors AS v ON s.vendor_id = v.id
           LEFT JOIN farmers AS f ON s.farmer_id = f.id
           LEFT JOIN customers AS cu ON s.customer_id = cu.id
+          WHERE (s.status IS NULL OR s.status != 'Inactive')
           ORDER BY si.sale_id;
         `;
 

@@ -58,6 +58,7 @@ export default function Dashboard() {
   const [monthlyRevenue, setMonthlyRevenue] = useState(0); // Add this for single month revenue
   const [revenueData, setRevenueData] = useState([]); // This should be array for chart
   const [vendorData, setVendorData] = useState([]);
+  const [pendingSalesBillsCount, setPendingSalesBillsCount] = useState(0);
 
   // Add this helper function to get month key
   const getMonthKey = (dateString) => {
@@ -82,7 +83,7 @@ export default function Dashboard() {
         // Fetch both purchases and sales data
         const [purchaseRes, salesRes] = await Promise.all([
           getAllPurchaseBill.getAll(totalCompanies),
-          getAllSalesBill.getAllBillByMonth(totalCompanies),
+          getAllSalesBill.getAll(totalCompanies),
         ]);
 
         const purchaseData = purchaseRes?.data || [];
@@ -121,10 +122,11 @@ export default function Dashboard() {
         });
 
         // Process sales data
+        let pendingCount = 0;
         salesData.forEach((company) => {
-          const sales = company?.sales || [];
+          const sales = company?.sales || company?.data || [];
           sales.forEach((sale) => {
-            const billDate = sale?.saleDetails?.bill_date || sale?.bill_date;
+            const billDate = sale?.saleDetails?.bill_date || sale?.bill_date || sale?.created_at;
             const monthKey = getMonthKey(billDate);
             if (monthKey && revenueBuckets.has(monthKey)) {
               const amount =
@@ -135,8 +137,28 @@ export default function Dashboard() {
                 0;
               revenueBuckets.get(monthKey).sales += amount;
             }
+
+            // Calculate pending sales bills for day 28-31
+            if (billDate) {
+              const d = new Date(billDate);
+              const day = d.getDate();
+              if (day >= 28 && day <= 31) {
+                // Get totals from items or sale
+                const itemsArr = Array.isArray(sale?.items) ? sale.items : (Array.isArray(sale?.sale_items) ? sale.sale_items : [sale]);
+                const itemsTotal = itemsArr.reduce((sum, item) => sum + Number(item?.net_total || 0), 0);
+                const totalAmount = Number(sale?.saleDetails?.total_amount) || Number(sale?.total_amount) || itemsTotal;
+                const otherAmount = Number(itemsArr[0]?.other_amount || 0);
+                const finalTotal = totalAmount + otherAmount;
+                const paidAmount = Number(sale?.saleDetails?.paid_amount) || Number(sale?.paid_amount) || 0;
+                
+                if (finalTotal > paidAmount) {
+                  pendingCount++;
+                }
+              }
+            }
           });
         });
+        setPendingSalesBillsCount(pendingCount);
 
         // Calculate revenue for each month (sales - purchases)
         const processedData = Array.from(revenueBuckets.values()).map(
@@ -450,6 +472,18 @@ export default function Dashboard() {
               <p className="text-sm opacity-80">Total Sales This Month</p>
               <h3 className="text-2xl font-bold">
                 ₹ {currentMonthSalesTotalAmount.toFixed(2)}
+              </h3>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/sales-reports" state={{ paymentStatus: "pending", dayRangeMode: true }} className="block">
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-red-500 to-orange-600 shadow-lg text-white flex items-center gap-4 hover:scale-[1.01] transition-transform">
+            <span className="text-4xl leading-none">⏳</span>
+            <div>
+              <p className="text-sm opacity-80">Month-End Pending Bills (28th-31st)</p>
+              <h3 className="text-2xl font-bold">
+                {pendingSalesBillsCount}
               </h3>
             </div>
           </div>

@@ -34,6 +34,7 @@ const getAllPurchasesBillController = {
           INNER JOIN categories AS c ON p.category_id = c.id
           LEFT JOIN vendors AS v ON pr.vendor_id = v.id
           LEFT JOIN farmers AS f ON pr.farmer_id = f.id
+          WHERE (pr.status IS NULL OR pr.status != 'Inactive')
           ORDER BY pi.purchase_id;
         `;
 

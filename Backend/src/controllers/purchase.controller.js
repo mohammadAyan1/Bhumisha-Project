@@ -1768,7 +1768,7 @@ const purchaseController = {
 
       const [purchases] = await connection.query(`
         SELECT
-          p.id, p.bill_no, p.bill_date, p.total_amount, p.status, p.party_type, p.bill_img,
+          p.id, p.bill_no, p.bill_date, p.total_amount, p.status, p.delete_reason, p.party_type, p.bill_img,
           p.paid_amount, p.discount_percent, p.discount_amount, p.gst_amount, p.taxable_amount,
           p.base_amount, p.payment_method, p.payment_note, p.terms_condition, p.unit as purchase_unit,
           v.vendor_name, v.firm_name, v.address as vendor_address, v.contact_number as vendor_contact,
@@ -2077,8 +2077,19 @@ const purchaseController = {
 
       const purchasesTable = tn(code, "purchases");
       const itemsTable = tn(code, "purchase_items");
+      
+      const delete_reason = req.body?.delete_reason || req.query?.delete_reason || null;
 
       await connection.query("START TRANSACTION");
+
+      // Ensure delete_reason column exists
+      const [colCheck] = await connection.query(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'delete_reason'`, 
+        [purchasesTable]
+      );
+      if (colCheck[0].count === 0) {
+        await connection.query(`ALTER TABLE \`${purchasesTable}\` ADD COLUMN delete_reason TEXT NULL`);
+      }
 
       // Get items to revert stock
       const [items] = await connection.query(
@@ -2112,16 +2123,36 @@ const purchaseController = {
         }
       }
 
-      // Delete items
+      // Fetch the purchase to get master reference_id
+      const [existingPurchaseRows] = await connection.query(
+        `SELECT reference_id FROM \`${purchasesTable}\` WHERE id=?`, 
+        [id]
+      );
+      const masterPurchaseId = existingPurchaseRows.length > 0 ? existingPurchaseRows[0].reference_id : null;
+
+      // Soft delete items
       await connection.query(
-        `DELETE FROM \`${itemsTable}\` WHERE purchase_id = ?`,
+        `UPDATE \`${itemsTable}\` SET status='Inactive' WHERE purchase_id = ?`,
         [id]
       );
 
-      // Delete purchase
-      await connection.query(`DELETE FROM \`${purchasesTable}\` WHERE id = ?`, [
+      // Soft delete purchase
+      await connection.query(`UPDATE \`${purchasesTable}\` SET status='Inactive', delete_reason=? WHERE id = ?`, [
+        delete_reason,
         id,
       ]);
+
+      if (masterPurchaseId) {
+        // Ensure delete_reason column exists in master purchases table
+        const [masterColCheck] = await connection.query(
+          `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'purchases' AND COLUMN_NAME = 'delete_reason'`
+        );
+        if (masterColCheck[0].count === 0) {
+          await connection.query(`ALTER TABLE purchases ADD COLUMN delete_reason TEXT NULL`);
+        }
+        await connection.query(`UPDATE purchase_items SET status='Inactive' WHERE purchase_id = ?`, [masterPurchaseId]);
+        await connection.query(`UPDATE purchases SET status='Inactive', delete_reason=? WHERE id = ?`, [delete_reason, masterPurchaseId]);
+      }
 
       await connection.query("COMMIT");
       res.json({ message: "Purchase deleted successfully" });
@@ -2130,6 +2161,83 @@ const purchaseController = {
         await connection.query("ROLLBACK");
       } catch { }
       console.error("Purchase delete error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  // Activate purchase
+  activate: async (req, res) => {
+    const connection = db.promise();
+    try {
+      const { id } = req.params;
+      const code = normalize(
+        req.headers["x-company-code"] || req.body.company_code || ""
+      );
+      if (!code)
+        return res.status(400).json({ error: "x-company-code required" });
+
+      const purchasesTable = tn(code, "purchases");
+      const itemsTable = tn(code, "purchase_items");
+
+      await connection.query("START TRANSACTION");
+
+      // Ensure delete_reason column exists
+      const [colCheck] = await connection.query(
+        `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'delete_reason'`, 
+        [purchasesTable]
+      );
+      if (colCheck[0].count === 0) {
+        await connection.query(`ALTER TABLE \`${purchasesTable}\` ADD COLUMN delete_reason TEXT NULL`);
+      }
+
+      // Restore stock
+      const [items] = await connection.query(
+        `SELECT product_id, size, unit FROM \`${itemsTable}\` WHERE purchase_id = ?`,
+        [id]
+      );
+
+      for (const item of items) {
+        const addGrams = convertToGramsBackend(item.size, item.unit || "kg");
+        const [prodRows] = await connection.query(
+          `SELECT id, size FROM products WHERE id = ? FOR UPDATE`,
+          [item.product_id]
+        );
+
+        if (prodRows.length) {
+          const curr = Number(prodRows[0].size || 0);
+          const updated = curr + addGrams; // Add back to stock
+
+          await connection.query(`UPDATE products SET size = ? WHERE id = ?`, [
+            updated,
+            item.product_id,
+          ]);
+        }
+      }
+
+      // Fetch the purchase to get master reference_id
+      const [existingPurchaseRows] = await connection.query(
+        `SELECT reference_id FROM \`${purchasesTable}\` WHERE id=?`, 
+        [id]
+      );
+      const masterPurchaseId = existingPurchaseRows.length > 0 ? existingPurchaseRows[0].reference_id : null;
+
+      // Activate items
+      await connection.query(`UPDATE \`${itemsTable}\` SET status='Active' WHERE purchase_id = ?`, [id]);
+      // Activate purchase
+      await connection.query(`UPDATE \`${purchasesTable}\` SET status='Active', delete_reason=NULL WHERE id = ?`, [id]);
+
+      if (masterPurchaseId) {
+        await connection.query(`UPDATE purchase_items SET status='Active' WHERE purchase_id = ?`, [masterPurchaseId]);
+        await connection.query(`UPDATE purchases SET status='Active', delete_reason=NULL WHERE id = ?`, [masterPurchaseId]);
+      }
+
+      await connection.query("COMMIT");
+      res.json({ message: "Purchase activated successfully" });
+    } catch (err) {
+      try {
+        await connection.query("ROLLBACK");
+      } catch { }
+      console.error("Purchase activate error:", err);
       res.status(500).json({ error: err.message });
     }
   },

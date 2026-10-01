@@ -785,12 +785,30 @@ const SalesController = {
       const code = normalize(
         req.headers["x-company-code"] || req.query.company_code || ""
       );
+      const delete_reason = req.body?.delete_reason || req.query?.delete_reason || null;
       if (!code)
         return res.status(400).json({ error: "x-company-code required" });
-      await Sales.delete(sale_id, code);
+      await Sales.delete(sale_id, code, delete_reason);
       return res.json({ message: "Sale deleted successfully" });
     } catch (err) {
       console.error("deleteSale error:", err);
+      return res.status(500).json({ error: "Server Error" });
+    }
+  },
+
+  async activateSale(req, res) {
+    try {
+      const sale_id = Number(req.params.id);
+      if (!sale_id) return res.status(400).json({ error: "Invalid sale ID" });
+      const code = normalize(
+        req.headers["x-company-code"] || req.query.company_code || ""
+      );
+      if (!code)
+        return res.status(400).json({ error: "x-company-code required" });
+      await Sales.activate(sale_id, code);
+      return res.json({ message: "Sale activated successfully" });
+    } catch (err) {
+      console.error("activateSale error:", err);
       return res.status(500).json({ error: "Server Error" });
     }
   },

@@ -14,6 +14,7 @@ salesRoutes.get("/", requireAuth, SalesController.getSales);
 salesRoutes.get("/:id", SalesController.getSaleByIdWithItems);
 salesRoutes.put("/:id", requireAuth, SalesController.updateSale);
 salesRoutes.delete("/:id", requireAuth, SalesController.deleteSale);
+salesRoutes.put("/:id/activate", requireAuth, SalesController.activateSale);
 // Previous due
 salesRoutes.get(
   "/party/:type/:id/previous-due",

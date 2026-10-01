@@ -1041,6 +1041,7 @@ import { formatDateDMY } from "../../utils/dateUtils.js";
 // export default SalesReports;
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx"; // Import xlsx library
 import companyAPI from "../../axios/companyAPI.js";
 import getAllSalesBill from "../../axios/getAllSalesBill.js";
@@ -1052,12 +1053,15 @@ const SalesReports = () => {
   const [exportLoading, setExportLoading] = useState(false); // Loading state for export
 
   // Filters
+  const location = useLocation();
   const [search, setSearch] = useState("");
   const [partyType, setPartyType] = useState("");
   const [buyerType, setBuyerType] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState(location.state?.paymentStatus || "all");
+  const [dayRangeMode, setDayRangeMode] = useState(location.state?.dayRangeMode || false);
   const [modalData, setModalData] = useState(null);
 
   // Sorting
@@ -1121,10 +1125,12 @@ const SalesReports = () => {
 
   // Initialize date filters with current month on component mount
   useEffect(() => {
-    const { from, to } = getCurrentMonthDates();
-    setDateFrom(from);
-    setDateTo(to);
-  }, []);
+    if (!dayRangeMode) {
+      const { from, to } = getCurrentMonthDates();
+      setDateFrom(from);
+      setDateTo(to);
+    }
+  }, [dayRangeMode]);
 
   useEffect(() => {
     if (Array.isArray(totalCompanies) && totalCompanies.length > 0) {
@@ -1477,7 +1483,7 @@ const SalesReports = () => {
       );
     }
 
-    if (dateFrom) {
+    if (dateFrom && !dayRangeMode) {
       const from = toISODate(dateFrom);
       arr = arr.filter((b) => {
         const d = toISODate(b.bill_date);
@@ -1485,12 +1491,34 @@ const SalesReports = () => {
       });
     }
 
-    if (dateTo) {
+    if (dateTo && !dayRangeMode) {
       const to = toISODate(dateTo);
       if (to) to.setUTCHours(23, 59, 59, 999);
       arr = arr.filter((b) => {
         const d = toISODate(b.bill_date);
         return d && to && d <= to;
+      });
+    }
+
+    if (dayRangeMode) {
+      arr = arr.filter((b) => {
+        const d = toISODate(b.bill_date);
+        if (!d) return false;
+        const day = d.getDate();
+        return day >= 28 && day <= 31;
+      });
+    }
+
+    if (paymentStatus && paymentStatus !== "all") {
+      arr = arr.filter((b) => {
+        const total = Number(b.total_amount) + Number(b.other_amount || 0);
+        const paid = Number(b._raw?.saleDetails?.paid_amount || 0);
+        const diff = total - paid;
+        if (paymentStatus === "pending") return diff > 0;
+        if (paymentStatus === "unpaid") return diff >= total && total > 0;
+        if (paymentStatus === "partial") return diff > 0 && diff < total;
+        if (paymentStatus === "paid") return diff <= 0;
+        return true;
       });
     }
 
@@ -1525,6 +1553,12 @@ const SalesReports = () => {
             .includes(q) ||
           String(b.sale_id || "")
             .toLowerCase()
+            .includes(q) ||
+          String(b.companyCode || "")
+            .toLowerCase()
+            .includes(q) ||
+          String(b.party_type || "")
+            .toLowerCase()
             .includes(q)
         );
       });
@@ -1539,6 +1573,8 @@ const SalesReports = () => {
     dateFrom,
     dateTo,
     search,
+    paymentStatus,
+    dayRangeMode,
   ]);
 
   // Calculate totals for all filtered bills
@@ -1619,6 +1655,8 @@ const SalesReports = () => {
     const { from, to } = getCurrentMonthDates();
     setDateFrom(from);
     setDateTo(to);
+    setPaymentStatus("all");
+    setDayRangeMode(false);
     setSortBy("bill_date");
     setSortDir("desc");
   };
@@ -1738,7 +1776,7 @@ const SalesReports = () => {
         <div className="space-y-4">
           {/* Filters Section */}
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
                   Company
@@ -1788,6 +1826,23 @@ const SalesReports = () => {
                   <option value="">All Buyer Types</option>
                   <option value="retailer">Retailer</option>
                   <option value="wholesaler">Wholesaler</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">
+                  Payment Status
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Payments</option>
+                  <option value="pending">Pending (Unpaid + Partial)</option>
+                  <option value="paid">Paid</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="partial">Partial</option>
                 </select>
               </div>
 

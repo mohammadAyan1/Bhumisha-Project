@@ -117,8 +117,8 @@ const billController = {
       const offset = (page - 1) * limit;
 
       // Build dynamic WHERE clauses
-      let salesWhere = "WHERE 1=1";
-      let purchasesWhere = "WHERE 1=1";
+      let salesWhere = "WHERE (s.status IS NULL OR s.status != 'Inactive')";
+      let purchasesWhere = "WHERE (p.status IS NULL OR p.status != 'Inactive')";
       const purchaseParams = [];
       const salesParams = [];
 

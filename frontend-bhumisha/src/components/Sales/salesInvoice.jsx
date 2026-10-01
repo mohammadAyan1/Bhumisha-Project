@@ -387,15 +387,44 @@ ${url}`;
 
   const image_url = import.meta.env.VITE_IMAGE_URL;
 
-  // Split items into chunks for better display (15 items per page/block)
-  const itemsPerPage = 15;
-  const itemChunks = [];
-  for (let i = 0; i < items.length; i += itemsPerPage) {
-    itemChunks.push(items.slice(i, i + itemsPerPage));
-  }
+  const grandTotal = Number(taxBreakup.total || 0) + Number(sale.other_amount || 0);
+  const paidAmount = Number(sale?.paid_amount || 0);
+  const remainingAmount = grandTotal - paidAmount;
 
   return (
     <div className="flex flex-col items-center py-2 bg-gray-50 min-h-screen">
+      <style>
+        {`
+          @media print {
+            @page {
+              size: A4 portrait;
+              margin: 5mm;
+            }
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .invoice-page {
+              width: 100% !important;
+              height: 280mm !important;
+              min-height: 280mm !important;
+              max-height: 280mm !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              box-shadow: none !important;
+              page-break-after: always;
+              break-after: page;
+              overflow: hidden;
+            }
+            .invoice-page:last-child {
+              page-break-after: auto !important;
+              break-after: auto !important;
+            }
+            #invoice-wrap {
+              gap: 0 !important;
+            }
+          }
+        `}
+      </style>
+
       <div className="flex gap-2 mb-2 no-print">
         <button
           onClick={() => window.print()}
@@ -403,14 +432,6 @@ ${url}`;
         >
           Print
         </button>
-
-        {/* <button
-          onClick={handlePDF}
-          disabled={isGeneratingPDF}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded shadow text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
-        </button> */}
 
         <button
           onClick={handleWhatsAppShare}
@@ -427,554 +448,266 @@ ${url}`;
         </button>
       </div>
 
-      {/* Invoice Container - Fixed width for consistent PDF output */}
-      <div
-        id="invoice-wrap"
-        ref={ref}
-        className="bg-white text-black shadow p-2"
-        style={{
-          width: "794px", // Fixed width for PDF (A4 width in pixels)
-          minHeight: "1123px", // A4 height in pixels
-          background: "#ffffff",
-          fontFamily: "Arial, sans-serif",
-          fontSize: "10px",
-          boxSizing: "border-box",
-          margin: "0 auto",
-        }}
-      >
-        {/* Outer border - reduced margins */}
-        <div className="border border-black m-1 p-1">
-          {/* Top Brand Header - Compact */}
-          <div className="flex items-start gap-2">
-            <img
-              src={
-                company?.image_url
-                  ? `${image_url}${company.image_url}`
-                  : "/img/image.png"
-              }
-              alt="Logo"
-              className="w-20 h-20 border border-black object-contain mt-1"
-              crossOrigin="anonymous"
-            />
-            <div className="flex-1">
-              <div
-                className="text-[20px] font-extrabold tracking-wide leading-tight"
-                style={{ color: "#008000" }}
-              >
-                {safe(company.name, "")}
-              </div>
-              <div
-                className="text-[10px] py-0.5 px-1 inline-block text-white mt-0.5"
-                style={{ background: "#0aa37f", borderRadius: "2px" }}
-              >
-                Close to Nature
-              </div>
-              <div className="text-[9px] mt-0.5 leading-tight">
-                {safe(company.address, "")}
-              </div>
-              <div className="text-[9px] leading-tight">
-                Mob: {safe(company.contact_no, "")} &nbsp; Web:{" "}
-                {safe("www.bhumishaorganics.com")} &nbsp; Email:{" "}
-                {safe(company.email, "")}
-              </div>
+      <div ref={ref} id="invoice-wrap" className="flex flex-col gap-8 w-full items-center">
+        {["ORIGINAL FOR RECIPIENT", "FOR TRANSPORT"].map((printType, index) => (
+          <div
+            key={index}
+            className="invoice-page bg-white text-black shadow p-2"
+            style={{
+              width: "210mm",
+              minHeight: "297mm",
+              background: "#ffffff",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "10px",
+              boxSizing: "border-box",
+            }}
+          >
+            {/* Header Title */}
+            <div className="flex gap-2 mb-1 items-center">
+              <span className="font-bold text-sm">TAX INVOICE</span>
+              <span className="border border-black px-1 text-[10px]">{printType}</span>
             </div>
-            <div className="text-right text-[9px] min-w-[100px]">
-              <div className="font-semibold">
-                GST NO : {safe(company.gst_no, "")}
-              </div>
-              <div className="mt-0.5 border border-black px-1 py-0.5 text-[11px] font-bold">
-                TAX INVOICE
-              </div>
-              <div className="text-[8px] mt-0.5">ORIGINAL FOR RECIPIENT</div>
-            </div>
-          </div>
 
-          {/* Customer + Invoice Meta - Compact */}
-          <div className="grid grid-cols-3 gap-1 mt-1 text-[9px]">
-            <div className="border border-black">
-              <div className="bg-gray-100 border-b border-black px-1 py-0.5 font-semibold text-[10px]">
-                Customer Detail
-              </div>
-              <div className="grid grid-cols-2 gap-0">
-                {/* Row 1 */}
-                <div className="flex border-b border-r border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    M/S -
-                  </div>
-                  <div className="flex-1 py-0.5">{safe(party.name, "")}</div>
-                </div>
-
-                <div className="flex border-b border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Phone -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(party?.mobile_no, "")}
+            {/* Main Outer Border */}
+            <div className="border border-black flex flex-col h-[calc(100%-30px)]">
+              
+              {/* Row 1: Company & Invoice Info */}
+              <div className="grid grid-cols-2 border-b border-black">
+                {/* Company Details */}
+                <div className="p-2 border-r border-black flex items-start gap-2">
+                  <img
+                    src={company?.image_url ? `${image_url}${company.image_url}` : "/img/image.png"}
+                    alt="Logo"
+                    className="w-20 h-20 border border-black object-contain"
+                    crossOrigin="anonymous"
+                  />
+                  <div className="flex-1">
+                    <div className="text-[16px] font-extrabold text-green-700 leading-tight uppercase">
+                      {safe(company.name, "")}
+                    </div>
+                    <div className="text-[10px] mt-1 leading-tight">
+                      {safe(company.address, "")}
+                    </div>
+                    <div className="text-[10px] mt-1 font-semibold">
+                      GSTIN: <span className="font-normal">{safe(company.gst_no, "")}</span>
+                    </div>
+                    <div className="text-[10px] font-semibold">
+                      Mobile: <span className="font-normal">{safe(company.contact_no, "")}</span>
+                    </div>
+                    <div className="text-[10px] font-semibold">
+                      Email: <span className="font-normal">{safe(company.email, "")}</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Row 2 */}
-                <div className="flex border-r border-b border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Place of Supply -
+                {/* Invoice Details */}
+                <div className="p-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Invoice No.</div>
+                    <div>{safe(sale.bill_no, "")}</div>
                   </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(party.state_name || party.address, "")}
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Invoice Date</div>
+                    <div>{safe(formatDateTime(sale.bill_date), "")}</div>
                   </div>
-                </div>
-
-                <div className="flex border-b border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    GSTIN -
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Challan Date</div>
+                    <div>{safe(formatDateTime(sale.challan_date) || formatDateTime(sale.bill_date), "")}</div>
                   </div>
-                  <div className="flex-1 py-0.5">{safe(party.gst_no, "")}</div>
-                </div>
-
-                {/* Row 3 - Place of Supply spans full width */}
-                <div className="flex col-span-2">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Address -
+                  <div className="flex flex-col">
+                    <div className="font-semibold">E-Way Bill No.</div>
+                    <div>{safe(sale.eway_bill_no, "")}</div>
                   </div>
-                  <div className="flex-1 py-0.5">{safe(party.address, "")}</div>
-                </div>
-              </div>
-            </div>
-            <div className="border border-black">
-              <div className="grid grid-cols-3 text-[8px]">
-                {/* Row 1 */}
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Invoice No.</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.bill_no, "")}
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Transport</div>
+                    <div>{safe(sale.transport, "")}</div>
                   </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Invoice Date</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(formatDateTime(sale.bill_date), "")}
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Vehicle No.</div>
+                    <div>{safe(sale.vehicle_no, "—")}</div>
                   </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-black">
-                  <div>Challan Date</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(
-                      formatDateTime(sale.challan_date) ||
-                      formatDateTime(sale.bill_date),
-                      ""
-                    )}
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Transport ID</div>
+                    <div>{safe(sale.transport_id, "")}</div>
                   </div>
-                </div>
-
-                {/* Row 2 */}
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Transport Amount</div>
-                  <div className="font-semibold text-[9px]">
-                    {fmt(sale.other_amount)}
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Transport Amount</div>
+                    <div>{fmt(sale.other_amount)}</div>
                   </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Remark</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.other_note, "—")}
-                  </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-black">
-                  <div>E-Way Bill No.</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.eway_bill_no, "")}
-                  </div>
-                </div>
-
-                {/* Row 3 */}
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Transport</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.transport, "")}
-                  </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-r border-black">
-                  <div>Transport ID</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.transport_id, "")}
-                  </div>
-                </div>
-                <div className="px-1 py-0.5 border-b border-black">
-                  <div>Vehicle No.</div>
-                  <div className="font-semibold text-[9px]">
-                    {safe(sale.vehicle_no, "—")}
+                  <div className="col-span-2 flex flex-col">
+                    <div className="font-semibold">Remark</div>
+                    <div>{safe(sale.other_note, "—")}</div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="border border-black px-1 py-1">
-              <div className="font-semibold mb-0.5">Terms and Conditions</div>
-              <div className="whitespace-pre-line text-[8px] leading-3">
-                {sale.remarks ||
-                  `Subject to Bhopal Jurisdiction.\nOur Responsibility Ceases as soon as goods leaves our Premises.\nGoods once sold will not taken back.\nTransport as per actual.\nTotal payment due in 15 days`}
-              </div>
-            </div>
-          </div>
 
-          {/* Items Table - Compact with smaller font */}
-          <div className="border border-black mt-1">
-            <table className="w-full h-auto border-collapse text-[8px]">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-black py-0.5 px-0.5 w-6">Sr.</th>
-                  <th className="border border-black py-0.5 px-0.5 text-left">
-                    Name of Product / Service
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-12">
-                    HSN / SAC
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-8">Qty</th>
-                  <th className="border border-black py-0.5 px-0.5 w-8">
-                    Unit
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-12">
-                    Rate
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-14">
-                    Taxable Value
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-10">
-                    % GST
-                  </th>
-                  <th className="border border-black py-0.5 px-0.5 w-14">
-                    Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {itemChunks.map((chunk, chunkIndex) => (
-                  <React.Fragment key={chunkIndex}>
-                    {chunk.map((r, i) => {
+              {/* Row 2: Bill To & Ship To */}
+              <div className="grid grid-cols-2 border-b border-black">
+                {/* BILL TO */}
+                <div className="p-2 border-r border-black">
+                  <div className="font-semibold mb-1">BILL TO</div>
+                  <div className="font-bold text-[12px]">{safe(party.name, "")}</div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Address:</span> {safe(party.address, "")}
+                  </div>
+                  <div className="mt-1 flex justify-between">
+                    <div><span className="font-semibold">GSTIN:</span> {safe(party.gst_no, "")}</div>
+                    <div><span className="font-semibold">Place of Supply:</span> {safe(party.state_name || party.address, "")}</div>
+                  </div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Mobile:</span> {safe(party?.mobile_no, "")}
+                  </div>
+                </div>
+
+                {/* SHIP TO */}
+                <div className="p-2">
+                  <div className="font-semibold mb-1">SHIP TO</div>
+                  <div className="font-bold text-[12px]">{safe(party.name, "")}</div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Address:</span> {safe(party.address, "")}
+                  </div>
+                  <div className="mt-1 flex justify-between">
+                    <div><span className="font-semibold">GSTIN:</span> {safe(party.gst_no, "")}</div>
+                    <div><span className="font-semibold">Place of Supply:</span> {safe(party.state_name || party.address, "")}</div>
+                  </div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Mobile:</span> {safe(party?.mobile_no, "")}
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="flex-1 border-b border-black">
+                <table className="w-full border-collapse text-[10px]">
+                  <thead>
+                    <tr className="bg-[#e6f2e6] border-b border-black">
+                      <th className="border-r border-black py-1 px-1 w-8">S.NO.</th>
+                      <th className="border-r border-black py-1 px-1 text-left">ITEMS</th>
+                      <th className="border-r border-black py-1 px-1 w-16">HSN/SAC</th>
+                      <th className="border-r border-black py-1 px-1 w-12">QTY.</th>
+                      <th className="border-r border-black py-1 px-1 w-12">UNIT</th>
+                      <th className="border-r border-black py-1 px-1 w-16">RATE</th>
+                      <th className="border-r border-black py-1 px-1 w-20">TAXABLE</th>
+                      <th className="border-r border-black py-1 px-1 w-12">% GST</th>
+                      <th className="py-1 px-1 w-24 text-right">AMOUNT</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((r, i) => {
                       const qty = Number(r.qty || 0);
                       const rate = Number(r.rate || 0);
                       const discAmt = Number(r.discount_amount || 0);
-                      const taxable = Number(
-                        r.taxable_amount || qty * rate - discAmt
-                      );
+                      const taxable = Number(r.taxable_amount || qty * rate - discAmt);
                       const gstp = Number(r.gst_percent || r.tax_percent || 0);
-                      const gstAmt =
-                        Number(r.gst_amount || r.cgst_amount || 0) +
-                        Number(r.sgst_amount || 0) +
-                        Number(r.igst_amount || 0) || (taxable * gstp) / 100;
+                      const gstAmt = Number(r.gst_amount || r.cgst_amount || 0) + Number(r.sgst_amount || 0) + Number(r.igst_amount || 0) || (taxable * gstp) / 100;
                       const net = Number(r.net_total || taxable + gstAmt);
                       const unit = r.unit || r.unit_code || "NOS";
-                      const desc =
-                        r.item_name || r.product_name || `#${r.product_id}`;
+                      const desc = r.item_name || r.product_name || `#${r.product_id}`;
+                      
                       return (
-                        <tr key={r.id || i} className="align-top">
-                          <td className="border border-black py-0.5 px-0.5 text-center">
-                            {chunkIndex * itemsPerPage + i + 1}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-left">
-                            {desc}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-center">
-                            {safe(r.hsn_code, "—")}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-center">
-                            {fmt(qty)}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-center">
-                            {unit}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-right">
-                            {fmt(rate)}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-right">
-                            {fmt(taxable)}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-center">
-                            {fmt(gstp, 0)}
-                          </td>
-                          <td className="border border-black py-0.5 px-0.5 text-right">
-                            {fmt(net)}
-                          </td>
+                        <tr key={r.id || i} className="align-top border-b border-[#ddd]">
+                          <td className="border-r border-black py-1 px-1 text-center">{i + 1}</td>
+                          <td className="border-r border-black py-1 px-1">{desc}</td>
+                          <td className="border-r border-black py-1 px-1 text-center">{safe(r.hsn_code, "—")}</td>
+                          <td className="border-r border-black py-1 px-1 text-center">{fmt(qty)}</td>
+                          <td className="border-r border-black py-1 px-1 text-center">{unit}</td>
+                          <td className="border-r border-black py-1 px-1 text-right">{fmt(rate)}</td>
+                          <td className="border-r border-black py-1 px-1 text-right">{fmt(taxable)}</td>
+                          <td className="border-r border-black py-1 px-1 text-center">{fmt(gstp, 0)}%</td>
+                          <td className="py-1 px-1 text-right">{fmt(net)}</td>
                         </tr>
                       );
                     })}
-                  </React.Fragment>
-                ))}
-                {items.length === 0 && (
-                  <tr>
-                    <td
-                      className="border border-black py-2 px-0.5 text-center"
-                      colSpan={9}
-                    >
-                      No Items
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-100 font-semibold">
-                  <td
-                    className="border border-black py-0.5 px-0.5 text-center"
-                    colSpan={3}
-                  >
-                    Total
-                  </td>
-                  <td className="border border-black py-0.5 px-0.5 text-center">
-                    {fmt(items.reduce((s, r) => s + Number(r.qty || 0), 0))}
-                  </td>
-                  <td className="border border-black py-0.5 px-0.5 text-center">
-                    NOS
-                  </td>
-                  <td className="border border-black py-0.5 px-0.5"></td>
-                  <td className="border border-black py-0.5 px-0.5 text-right">
-                    {fmt(taxBreakup.totalTaxable)}
-                  </td>
-                  <td className="border border-black py-0.5 px-0.5"></td>
-                  <td className="border border-black py-0.5 px-0.5 text-right">
-                    {fmt(taxBreakup.total)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <div className="flex justify-between border">
-            <div className="flex justify-between a">
-              <h1 className="">paid amount</h1>
-            </div>
-            <div className="text-green-600 text-2xl">{sale?.paid_amount}</div>
-          </div>
-
-          <div className="border border-black">
-            <div className="grid grid-cols-6 gap-0 text-[8px]">
-              {/* Row 1: Taxable Amount and Total Tax */}
-              <div className="px-1 py-0.5 border-b border-r border-black bg-gray-50 font-medium col-span-2">
-                Taxable Amount
-              </div>
-              <div className="px-1 py-0.5 border-b border-r border-black text-right col-span-1">
-                {fmt(taxBreakup.totalTaxable)}
-              </div>
-              <div className="px-1 py-0.5 border-b border-r border-black bg-gray-50 font-medium col-span-2">
-                Total Tax
-              </div>
-              <div className="px-1 py-0.5 border-b border-black text-right col-span-1">
-                {fmt(taxBreakup.totalGst)}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-[#e6f2e6] border-y border-black font-semibold">
+                      <td colSpan={3} className="border-r border-black py-1 px-2 text-right">TOTAL</td>
+                      <td className="border-r border-black py-1 px-1 text-center">{fmt(items.reduce((s, r) => s + Number(r.qty || 0), 0))}</td>
+                      <td colSpan={2} className="border-r border-black py-1 px-1"></td>
+                      <td className="border-r border-black py-1 px-1 text-right">{fmt(taxBreakup.totalTaxable)}</td>
+                      <td className="border-r border-black py-1 px-1"></td>
+                      <td className="py-1 px-1 text-right">₹ {fmt(taxBreakup.total)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">TRANSPORT AMOUNT</td>
+                      <td className="py-1 px-1 text-right">₹ {fmt(sale.other_amount)}</td>
+                    </tr>
+                    {taxBreakup.totalDiscount > 0 && (
+                      <tr>
+                        <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">DISCOUNT</td>
+                        <td className="py-1 px-1 text-right">- ₹ {fmt(taxBreakup.totalDiscount)}</td>
+                      </tr>
+                    )}
+                    <tr className="border-y border-black">
+                      <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-bold text-[12px]">GRAND TOTAL</td>
+                      <td className="py-1 px-1 text-right font-bold text-[12px]">₹ {fmt(grandTotal)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">PAID AMOUNT</td>
+                      <td className="py-1 px-1 text-right text-green-700 font-bold">₹ {fmt(paidAmount)}</td>
+                    </tr>
+                    <tr className="border-t border-black">
+                      <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-bold text-red-600">REMAINING AMOUNT</td>
+                      <td className="py-1 px-1 text-right text-red-600 font-bold">₹ {fmt(remainingAmount)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
 
-              {/* Row 2: Discount and Other Amount */}
-              <div className="px-1 py-0.5 border-b border-r border-black bg-gray-50 font-medium col-span-2">
-                Discount
-              </div>
-              <div className="px-1 py-0.5 border-b border-r border-black text-right col-span-1">
-                - {fmt(taxBreakup.totalDiscount)}
-              </div>
-              <div className="px-1 py-0.5 border-b border-r border-black bg-gray-50 font-medium col-span-2">
-                Transport Amount
-              </div>
-              <div className="px-1 py-0.5 border-b border-black text-right col-span-1">
-                ₹ {fmt(sale.other_amount)}
+              {/* Amount in words */}
+              <div className="border-b border-black p-1 text-[10px]">
+                <span className="font-semibold">Total Amount (in words): </span>
+                {toWords(grandTotal)} Rupees Only
               </div>
 
-              {/* Row 3: Total Amount After Tax */}
-              {/* Row 3: Total Amount After Tax with Remark in same row */}
-              <div className="px-1 py-1 border-b border-r border-black bg-gray-100 font-semibold col-span-2">
-                Total Amount After Tax
-              </div>
-              <div className="px-1 py-1 border-b border-r border-black bg-gray-100 font-bold text-right text-[10px] col-span-1">
-                ₹ {fmt(taxBreakup.total)}
-              </div>
-              <div className="px-1 py-1 border-b border-r border-black bg-gray-50 font-medium col-span-1">
-                Remark
-              </div>
-              <div className="px-1 py-1 border-b border-black col-span-2">
-                {safe(sale.other_note, "—")}
-              </div>
-
-              {/* Row 4: Remark Value and Grand Total Header */}
-
-              <div className="px-1 py-1 border-r border-black bg-gray-100 font-semibold col-span-2">
-                Grand Total
-              </div>
-              <div className="px-1 py-1 font-bold text-right text-[12px] border-black col-span-4 bg-yellow-50">
-                ₹{" "}
-                {fmt(
-                  Number(taxBreakup.total || 0) + Number(sale.other_amount || 0)
-                )}
-              </div>
-            </div>
-            {/* GST Breakdown Section - Compact */}
-            <div className="mt-1 p-1 bg-gray-50 border border-gray-200">
-              <div className="text-[9px] font-semibold text-gray-700 mb-1">
-                GST Breakdown Details
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[8px]">
-                <div className="flex justify-between">
-                  <span className="font-medium">SGST AMT:</span>
-                  <span className="font-mono">{fmt(taxBreakup.totalSgst)}</span>
+              {/* Bottom Section: Bank | Terms | Signature */}
+              <div className="grid grid-cols-3 min-h-[100px]">
+                {/* Bank Details */}
+                <div className="p-2 border-r border-black">
+                  <div className="font-semibold mb-1">Bank Details</div>
+                  <div className="grid grid-cols-[70px_1fr] gap-x-1 text-[10px]">
+                    <div>Bank Name:</div>
+                    <div className="font-medium">{patyBank?.bank_name || "Bank Of India"}</div>
+                    <div>Branch:</div>
+                    <div className="font-medium">{patyBank?.branch_name || "Gulmohar"}</div>
+                    <div>Account No:</div>
+                    <div className="font-medium">{patyBank?.account_number || "900920110000551"}</div>
+                    <div>IFSC Code:</div>
+                    <div className="font-medium">{patyBank?.ifsc_code || "BKID0009009"}</div>
+                    <div>UPI ID:</div>
+                    <div className="font-medium">{patyBank?.upi_id || "—"}</div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">CGST AMT:</span>
-                  <span className="font-mono">{fmt(taxBreakup.totalCgst)}</span>
+
+                {/* Terms */}
+                <div className="p-2 border-r border-black">
+                  <div className="font-semibold mb-1">Terms and Conditions</div>
+                  <div className="whitespace-pre-line text-[9px] leading-tight">
+                    {sale.remarks ||
+                      `1. Subject to Bhopal Jurisdiction.
+2. Our Responsibility Ceases as soon as goods leaves our Premises.
+3. Goods once sold will not taken back.
+4. Transport as per actual.
+5. Total payment due in 15 days`}
+                  </div>
+                </div>
+
+                {/* Signature */}
+                <div className="p-2 flex flex-col items-center justify-end text-center relative">
+                  <div className="absolute top-2 font-semibold text-[10px]">For {company?.name || "Bhumisha Organics"}</div>
+                  <div className="mt-8 border-t border-black w-3/4 pt-1 text-[10px] font-semibold">
+                    Authorised Signatory
+                  </div>
+                  <div className="text-[8px] mt-1 text-gray-500">
+                    This is a computer generated invoice, no signature required.
+                  </div>
                 </div>
               </div>
-              <div className="mt-1 space-y-0.5">
-                {Object.keys(taxBreakup.groups)
-                  .filter((p) => Number(p) > 0)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .map((percent) => {
-                    const group = taxBreakup.groups[percent];
-                    return (
-                      <div
-                        key={percent}
-                        className="flex items-center justify-between text-[8px] bg-white p-1 border"
-                      >
-                        <span className="font-medium">{percent}%:</span>
-                        <div className="flex gap-2">
-                          <span>SGST {fmt(group.sgst)}</span>
-                          <span>CGST {fmt(group.cgst)}</span>
-                          <span className="font-medium">
-                            = {fmt(group.sgst + group.cgst)} /{" "}
-                            {fmt(group.taxable)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
+
             </div>
           </div>
-
-          {/* Totals Grid - Compact */}
-          <div className="grid grid-cols-3 gap-1 mt-1 text-[9px]">
-            <div className="border border-black">
-              <div className="bg-gray-100 border-b border-black px-1 py-0.5 font-semibold text-[10px]">
-                Bank Details
-              </div>
-              <div className="grid grid-cols-2 gap-0">
-                {/* Row 1 - Bank Name and Branch */}
-                <div className="flex border-b border-r border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Bank Name -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(company?.bank_bank_name, "—")}
-                  </div>
-                </div>
-
-                <div className="flex border-b border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Branch -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(company?.bank_branch_name, "—")}
-                  </div>
-                </div>
-
-                {/* Row 2 - Account Number and IFSC */}
-                <div className="flex border-b border-r border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    Account No. -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(company?.bank_account_number, "—")}
-                  </div>
-                </div>
-
-                <div className="flex border-b border-black">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    IFSC -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(company?.bank_ifsc_code, "—")}
-                  </div>
-                </div>
-
-                {/* Row 3 - UPI ID (spans full width) */}
-                <div className="flex col-span-2 ">
-                  <div className="w-fit px-1 py-0.5 bg-gray-50 font-medium">
-                    UPI ID -
-                  </div>
-                  <div className="flex-1 py-0.5">
-                    {safe(company?.bank_upi_id || company?.upi_id, "—")}
-                  </div>
-
-                  <div className="text-center text-[9.6px] border-l border-black px-1 py-0.5 bg-blue-100">
-                    Pay using UPI
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Amount in words - Compact */}
-            <div className="border border-black px-1 text-[9px]">
-              <div className="bg-gray-100 border-b border-black px-1 py-0.5 font-semibold text-[10px]">
-                Total in words
-              </div>
-              <div className="mt-0.5 font-bold">
-                {toWords(
-                  Number(taxBreakup.total || 0) + Number(sale.other_amount || 0)
-                )}{" "}
-                Rupees Only
-              </div>
-              <div className="mt-0.5">
-                GST Amount: {fmt(taxBreakup.totalGst)}
-              </div>
-              <div className="mt-0.5 italic text-gray-700 text-[8px]">
-                Grand Total = Total After Tax + Transport Amount
-              </div>
-            </div>
-
-            {/* Signature - Compact */}
-
-            <div className="border border-black px-1 py-1 text-center">
-              <div>For {safe(company.name, "")}</div>
-              <div className="mt-4 inline-block border-t border-black w-32"></div>
-              <div className="text-[8px] mt-0.5">Authorised Signatory</div>
-              <div className="text-[7px] mt-2 italic">
-                This is a computer generated invoice, no signature required.
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1 mt-1 text-[9px]"></div>
-
-          {/* Footer */}
-          <div className="text-center text-[8px] mt-1">
-            Thank you for shopping with us!
-          </div>
-        </div>
+        ))}
       </div>
-
-      <style>{`
-@media print {
-  @page {
-    size: A4;
-    margin: 0.1in;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #invoice-wrap,
-  #invoice-wrap * {
-    visibility: visible;
-  }
-
-  #invoice-wrap {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 794px; /* exact A4 width in px */
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    background: #ffffff !important;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-}
-`}</style>
     </div>
   );
 }

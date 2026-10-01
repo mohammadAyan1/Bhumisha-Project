@@ -19,4 +19,10 @@ purchaseRoutes.put(
   purchaseController.update
 );
 
+// Delete
+purchaseRoutes.delete("/:id", purchaseController.delete);
+
+// Activate
+purchaseRoutes.put("/:id/activate", purchaseController.activate);
+
 module.exports = purchaseRoutes;

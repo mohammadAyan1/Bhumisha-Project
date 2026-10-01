@@ -1338,35 +1338,26 @@ const PurchaseBillsTable = () => {
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       arr = arr.filter((b) => {
-        const itemMatches = (b.items || []).some(
-          (item) =>
-            String(item?.items[0]?.product_name || "")
-              .toLowerCase()
-              .includes(q) ||
-            String(item?.items[0]?.hsn_code || "")
-              .toLowerCase()
-              .includes(q) ||
-            String(item?.items[0]?.category_name || "")
-              .toLowerCase()
-              .includes(q) ||
-            String(item?.companyCode || "")
-              .toLowerCase()
-              .includes(q)
-        );
+        // Search inside products
+        const itemMatches = (b.items || []).some((entry) => {
+          const products = Array.isArray(entry?.items) ? entry.items : [];
+          return products.some(
+            (prod) =>
+              String(prod?.product_name || "").toLowerCase().includes(q) ||
+              String(prod?.hsn_code || "").toLowerCase().includes(q) ||
+              String(prod?.category_name || "").toLowerCase().includes(q)
+          );
+        });
+
+        const partyName = b?.vendor_name || b?.farmer_name || b?.items?.[0]?.purchaseDetails?.firm_name || b?.items?.[0]?.purchaseDetails?.name || "";
+
         return (
           itemMatches ||
-          String(b?.items[0].items[0]?.firm_name || "")
-            .toLowerCase()
-            .includes(q) ||
-          String(b?.items[0]?.items[0]?.farmer_name || "")
-            .toLowerCase()
-            .includes(q) ||
-          String(b?.items[0]?.items[0]?.bill_no || "")
-            .toLowerCase()
-            .includes(q) ||
-          String(b?.items[0]?.items[0]?.purchase_id || "")
-            .toLowerCase()
-            .includes(q)
+          String(b?.companyCode || "").toLowerCase().includes(q) ||
+          String(b?.bill_no || b?.items?.[0]?.purchaseDetails?.bill_no || "").toLowerCase().includes(q) ||
+          String(partyName).toLowerCase().includes(q) ||
+          String(b?.party_type || b?.items?.[0]?.purchaseDetails?.party_type || "").toLowerCase().includes(q) ||
+          String(b?.purchase_id || "").toLowerCase().includes(q)
         );
       });
     }

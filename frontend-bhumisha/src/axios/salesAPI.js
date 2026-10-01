@@ -9,7 +9,8 @@ const salesAPI = {
 
   create: (data) => api.post("/sales", data),
   update: (id, data) => api.put(`/sales/${id}`, data),
-  delete: (id) => api.delete(`/sales/${id}`),
+  delete: (id, data) => api.delete(`/sales/${id}`, { data }),
+  activate: (id) => api.put(`/sales/${id}/activate`),
   getNewBillNo: () => api.get("/sales/new-bill-no"),
   getPartyPreviousDue: (type, id) =>
     api.get(`/sales/party/${type}/${id}/previous-due`),
