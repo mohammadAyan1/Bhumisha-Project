@@ -8,20 +8,20 @@ export default function SalaryPage() {
   const formatDateDMY = (dateTime, lastDate = "") => {
     if (!dateTime) return "—";
 
-    // Convert "2025-12-17 12:00:00" → "2025-12-17T12:00:00"
-    const normalized = dateTime.replace(" ", "T");
-
-    const d = new Date(normalized);
+    let d;
+    if (typeof dateTime === "string") {
+      const normalized = dateTime.replace(" ", "T");
+      d = new Date(normalized);
+    } else {
+      d = new Date(dateTime);
+    }
 
     if (isNaN(d)) return "—";
-    let day;
-    let month;
-    let year;
-    if (d) {
-      day = String(d.getDate()).padStart(2, "0");
-      month = String(d.getMonth() + 1).padStart(2, "0");
-      year = d.getFullYear();
-    }
+    
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    
     return `${day}/${month}/${year}`;
   };
 
