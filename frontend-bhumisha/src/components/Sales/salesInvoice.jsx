@@ -449,7 +449,10 @@ ${url}`;
       </div>
 
       <div ref={ref} id="invoice-wrap" className="flex flex-col gap-8 w-full items-center">
-        {["ORIGINAL FOR RECIPIENT", "FOR TRANSPORT"].map((printType, index) => (
+        {(grandTotal >= 100000 
+          ? ["ORIGINAL FOR RECIPIENT", "FOR TRANSPORT"] 
+          : ["ORIGINAL FOR RECIPIENT"]
+        ).map((printType, index) => (
           <div
             key={index}
             className="invoice-page bg-white text-black shadow p-2"
