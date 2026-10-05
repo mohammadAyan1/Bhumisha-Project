@@ -346,7 +346,7 @@ const billController = {
       const purchasesGrouped = groupItemsByBill(purchasesResult, "purchase");
 
       // Merge and sort properly
-      const allBills = [...salesGrouped, ...purchasesGrouped].sort((a, b) => 
+      const allBills = [...salesGrouped, ...purchasesGrouped].sort((a, b) =>
         new Date(b.created_at) - new Date(a.created_at)
       );
 

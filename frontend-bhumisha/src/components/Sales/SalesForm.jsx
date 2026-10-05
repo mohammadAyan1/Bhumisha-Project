@@ -665,7 +665,7 @@ export default function SalesForm({
             const product = normalized.find(
               (p) => Number(p.id) === Number(r.product_id)
             );
-            const unit = r.unit || product?.unit || "kg";
+            const unit = (r.unit || product?.unit || "kg").toLowerCase();
             const availableGrams = product?.available_grams || 0;
 
             return {
@@ -782,7 +782,7 @@ export default function SalesForm({
               const product = normalized.find(
                 (p) => Number(p.id) === Number(r.product_id)
               );
-              const unit = r.unit || product?.unit || "kg";
+              const unit = (r.unit || product?.unit || "kg").toLowerCase();
               const availableGrams = product?.available_grams || 0;
 
               return {
