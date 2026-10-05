@@ -5,7 +5,7 @@ import { Button, TextField } from "@mui/material";
 import { Download, Search } from "@mui/icons-material";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export default function DataTable({
   rows = [],
@@ -41,7 +41,7 @@ export default function DataTable({
     const tableRows = filteredRows.map((row) =>
       columns.map((col) => row[col.field])
     );
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
     });
