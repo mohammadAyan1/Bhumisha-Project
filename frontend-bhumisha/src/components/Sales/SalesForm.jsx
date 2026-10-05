@@ -666,7 +666,9 @@ export default function SalesForm({
               (p) => Number(p.id) === Number(r.product_id)
             );
             const unit = (r.unit || product?.unit || "kg").toLowerCase();
-            const availableGrams = product?.available_grams || 0;
+            // Add back the quantity already in this bill to get the true available amount for editing
+            const originalQtyGrams = convertToGrams(Number(r.qty) || 0, unit);
+            const availableGrams = (product?.available_grams || 0) + originalQtyGrams;
 
             return {
               product_id: r.product_id,
