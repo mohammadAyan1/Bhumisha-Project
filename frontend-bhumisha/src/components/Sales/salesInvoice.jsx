@@ -92,9 +92,8 @@ function toWords(n) {
     if (x < 100)
       return `${b[Math.floor(x / 10)]}${x % 10 ? " " + a[x % 10] : ""}`;
     if (x < 1000)
-      return `${a[Math.floor(x / 100)]} Hundred${
-        x % 100 ? " " + s(x % 100) : ""
-      }`;
+      return `${a[Math.floor(x / 100)]} Hundred${x % 100 ? " " + s(x % 100) : ""
+        }`;
     return "";
   };
 
@@ -297,9 +296,14 @@ export default function SalesInvoice() {
       // Ensure all child invoice pages are visible
       const pages = clone.querySelectorAll(".invoice-page");
       pages.forEach((page) => {
-        page.style.display = "block";
+        page.style.display = "flex";
+        page.style.flexDirection = "column";
         page.style.width = "794px";
+        page.style.height = "1122px";
         page.style.minHeight = "1122px";
+        page.style.maxHeight = "1122px";
+        page.style.padding = "30px 38px";
+        page.style.boxSizing = "border-box";
         page.style.visibility = "visible";
         page.style.boxShadow = "none";
       });
@@ -457,22 +461,35 @@ ${url}`;
   const remainingAmount = grandTotal - paidAmount;
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100 text-gray-900">
+    <div className="invoice-root-container flex flex-col items-center min-h-screen bg-gray-100 text-gray-900">
       <style>
         {`
           @media print {
             @page {
               size: A4 portrait;
-              margin: 5mm;
+              margin: 0 !important;
             }
+            html,
             body {
-              background: white !important;
               margin: 0 !important;
               padding: 0 !important;
+              background: #ffffff !important;
+              width: 210mm !important;
+              height: auto !important;
+              min-height: 0 !important;
+              overflow: visible !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
-            .no-print {
-              display: none !important;
+            .invoice-root-container {
+              display: block !important;
+              min-height: 0 !important;
+              height: auto !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: transparent !important;
             }
+            .no-print,
             .mobile-invoice-view {
               display: none !important;
             }
@@ -484,23 +501,27 @@ ${url}`;
               margin: 0 !important;
             }
             #invoice-wrap {
-              display: flex !important;
-              flex-direction: column !important;
-              width: 100% !important;
+              display: block !important;
+              width: 210mm !important;
+              margin: 0 auto !important;
+              padding: 0 !important;
               gap: 0 !important;
             }
             .invoice-page {
-              display: block !important;
-              width: 100% !important;
-              height: 280mm !important;
-              min-height: 280mm !important;
-              max-height: 280mm !important;
+              display: flex !important;
+              flex-direction: column !important;
+              width: 210mm !important;
+              height: 297mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
+              box-sizing: border-box !important;
+              padding: 8mm 10mm !important;
               margin: 0 !important;
-              padding: 0 !important;
               box-shadow: none !important;
-              page-break-after: always;
-              break-after: page;
-              overflow: hidden;
+              page-break-before: auto !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              overflow: hidden !important;
             }
             .invoice-page:last-child {
               page-break-after: auto !important;
@@ -533,15 +554,14 @@ ${url}`;
           </div>
 
           {/* Center: View Switcher (Mobile / A4 Sheet) */}
-          <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 text-xs">
+          {/* <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 text-xs">
             <button
               type="button"
               onClick={() => setViewMode("mobile")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition ${
-                activeView === "mobile"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition ${activeView === "mobile"
                   ? "bg-white text-green-700 shadow-xs font-bold"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>Mobile View</span>
@@ -549,16 +569,15 @@ ${url}`;
             <button
               type="button"
               onClick={() => setViewMode("a4")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition ${
-                activeView === "a4"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition ${activeView === "a4"
                   ? "bg-white text-green-700 shadow-xs font-bold"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               <FileText className="w-3.5 h-3.5" />
               <span>A4 Sheet</span>
             </button>
-          </div>
+          </div> */}
 
           {/* Right: Actions (Download PDF, Print, WhatsApp) */}
           <div className="flex items-center gap-1.5">
@@ -602,7 +621,7 @@ ${url}`;
       {/* ============================================================== */}
       {activeView === "mobile" && (
         <div className="mobile-invoice-view w-full max-w-md px-3 py-4 flex flex-col gap-3.5 no-print">
-          
+
           {/* Company & Invoice Header Card */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
             <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
@@ -774,8 +793,8 @@ ${url}`;
                 const gstp = Number(r.gst_percent || r.tax_percent || 0);
                 const gstAmt =
                   Number(r.gst_amount || r.cgst_amount || 0) +
-                    Number(r.sgst_amount || 0) +
-                    Number(r.igst_amount || 0) || (taxable * gstp) / 100;
+                  Number(r.sgst_amount || 0) +
+                  Number(r.igst_amount || 0) || (taxable * gstp) / 100;
                 const net = Number(r.net_total || taxable + gstAmt);
                 const unit = r.unit || r.unit_code || "NOS";
                 const desc = r.item_name || r.product_name || `#${r.product_id}`;
@@ -1045,9 +1064,8 @@ ${url}`;
       {/* 2. OFFICIAL A4 DOCUMENT VIEW (Full Sheet / Print / PDF clone) */}
       {/* ============================================================== */}
       <div
-        className={`a4-container-wrap w-full ${
-          activeView === "a4" ? "block" : "hidden md:block"
-        }`}
+        className={`a4-container-wrap w-full ${activeView === "a4" ? "block" : "hidden md:block"
+          }`}
       >
         <div className="w-full overflow-x-auto pb-6 pt-2 px-2 flex flex-col items-center">
           {activeView === "a4" && isMobileScreen && (
@@ -1069,10 +1087,13 @@ ${url}`;
             ).map((printType, index) => (
               <div
                 key={index}
-                className="invoice-page bg-white text-black shadow-lg p-2"
+                className="invoice-page bg-white text-black shadow-lg"
                 style={{
                   width: "210mm",
+                  height: "297mm",
                   minHeight: "297mm",
+                  maxHeight: "297mm",
+                  padding: "8mm 10mm",
                   background: "#ffffff",
                   fontFamily: "Arial, sans-serif",
                   fontSize: "10px",
@@ -1080,18 +1101,18 @@ ${url}`;
                 }}
               >
                 {/* Header Title */}
-                <div className="flex gap-2 mb-1 items-center">
-                  <span className="font-bold text-sm">TAX INVOICE</span>
-                  <span className="border border-black px-1 text-[10px]">{printType}</span>
+                <div className="flex gap-2 mb-1.5 items-center">
+                  <span className="font-bold text-sm tracking-wide">TAX INVOICE</span>
+                  <span className="border border-black px-1.5 py-0.5 text-[10px] font-semibold">{printType}</span>
                 </div>
 
                 {/* Main Outer Border */}
-                <div className="border border-black flex flex-col h-[calc(100%-30px)]">
+                <div className="border border-black flex flex-col flex-1">
                   
                   {/* Row 1: Company & Invoice Info */}
                   <div className="grid grid-cols-2 border-b border-black">
                     {/* Company Details */}
-                    <div className="p-2 border-r border-black flex items-start gap-2">
+                    <div className="p-2.5 border-r border-black flex items-start gap-2.5">
                       <img
                         src={
                           company?.image_url
@@ -1099,10 +1120,10 @@ ${url}`;
                             : "/img/image.png"
                         }
                         alt="Logo"
-                        className="w-20 h-20 border border-black object-contain"
+                        className="w-20 h-20 border border-black object-contain shrink-0"
                         crossOrigin="anonymous"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="text-[16px] font-extrabold text-green-700 leading-tight uppercase">
                           {safe(company.name, "")}
                         </div>
@@ -1122,7 +1143,7 @@ ${url}`;
                     </div>
 
                     {/* Invoice Details */}
-                    <div className="p-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+                    <div className="p-2.5 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                       <div className="flex flex-col">
                         <div className="font-semibold">Invoice No.</div>
                         <div>{safe(sale.bill_no, "")}</div>
@@ -1171,7 +1192,7 @@ ${url}`;
                   {/* Row 2: Bill To & Ship To */}
                   <div className="grid grid-cols-2 border-b border-black">
                     {/* BILL TO */}
-                    <div className="p-2 border-r border-black">
+                    <div className="p-2.5 border-r border-black">
                       <div className="font-semibold mb-1">BILL TO</div>
                       <div className="font-bold text-[12px]">{safe(party.name, "")}</div>
                       <div className="mt-1">
@@ -1192,7 +1213,7 @@ ${url}`;
                     </div>
 
                     {/* SHIP TO */}
-                    <div className="p-2">
+                    <div className="p-2.5">
                       <div className="font-semibold mb-1">SHIP TO</div>
                       <div className="font-bold text-[12px]">{safe(party.name, "")}</div>
                       <div className="mt-1">
@@ -1218,15 +1239,15 @@ ${url}`;
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-[#e6f2e6] border-b border-black">
-                          <th className="border-r border-black py-1 px-1 w-8">S.NO.</th>
-                          <th className="border-r border-black py-1 px-1 text-left">ITEMS</th>
-                          <th className="border-r border-black py-1 px-1 w-16">HSN/SAC</th>
-                          <th className="border-r border-black py-1 px-1 w-12">QTY.</th>
-                          <th className="border-r border-black py-1 px-1 w-12">UNIT</th>
-                          <th className="border-r border-black py-1 px-1 w-16">RATE</th>
-                          <th className="border-r border-black py-1 px-1 w-20">TAXABLE</th>
-                          <th className="border-r border-black py-1 px-1 w-12">% GST</th>
-                          <th className="py-1 px-1 w-24 text-right">AMOUNT</th>
+                          <th className="border-r border-black py-1.5 px-2 w-8">S.NO.</th>
+                          <th className="border-r border-black py-1.5 px-2 text-left">ITEMS</th>
+                          <th className="border-r border-black py-1.5 px-2 w-16">HSN/SAC</th>
+                          <th className="border-r border-black py-1.5 px-2 w-12">QTY.</th>
+                          <th className="border-r border-black py-1.5 px-2 w-12">UNIT</th>
+                          <th className="border-r border-black py-1.5 px-2 w-16">RATE</th>
+                          <th className="border-r border-black py-1.5 px-2 w-20">TAXABLE</th>
+                          <th className="border-r border-black py-1.5 px-2 w-12">% GST</th>
+                          <th className="py-1.5 px-2 w-24 text-right">AMOUNT</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1246,68 +1267,68 @@ ${url}`;
 
                           return (
                             <tr key={r.id || i} className="align-top border-b border-[#ddd]">
-                              <td className="border-r border-black py-1 px-1 text-center">{i + 1}</td>
-                              <td className="border-r border-black py-1 px-1">{desc}</td>
-                              <td className="border-r border-black py-1 px-1 text-center">{safe(r.hsn_code, "—")}</td>
-                              <td className="border-r border-black py-1 px-1 text-center">{fmt(qty)}</td>
-                              <td className="border-r border-black py-1 px-1 text-center">{unit}</td>
-                              <td className="border-r border-black py-1 px-1 text-right">{fmt(rate)}</td>
-                              <td className="border-r border-black py-1 px-1 text-right">{fmt(taxable)}</td>
-                              <td className="border-r border-black py-1 px-1 text-center">{fmt(gstp, 0)}%</td>
-                              <td className="py-1 px-1 text-right">{fmt(net)}</td>
+                              <td className="border-r border-black py-1 px-2 text-center">{i + 1}</td>
+                              <td className="border-r border-black py-1 px-2">{desc}</td>
+                              <td className="border-r border-black py-1 px-2 text-center">{safe(r.hsn_code, "—")}</td>
+                              <td className="border-r border-black py-1 px-2 text-center">{fmt(qty)}</td>
+                              <td className="border-r border-black py-1 px-2 text-center">{unit}</td>
+                              <td className="border-r border-black py-1 px-2 text-right">{fmt(rate)}</td>
+                              <td className="border-r border-black py-1 px-2 text-right">{fmt(taxable)}</td>
+                              <td className="border-r border-black py-1 px-2 text-center">{fmt(gstp, 0)}%</td>
+                              <td className="py-1 px-2 text-right">{fmt(net)}</td>
                             </tr>
                           );
                         })}
                       </tbody>
                       <tfoot>
                         <tr className="bg-[#e6f2e6] border-y border-black font-semibold">
-                          <td colSpan={3} className="border-r border-black py-1 px-2 text-right">TOTAL</td>
-                          <td className="border-r border-black py-1 px-1 text-center">
+                          <td colSpan={3} className="border-r border-black py-1.5 px-2 text-right">TOTAL</td>
+                          <td className="border-r border-black py-1.5 px-2 text-center">
                             {fmt(items.reduce((s, r) => s + Number(r.qty || 0), 0))}
                           </td>
-                          <td colSpan={2} className="border-r border-black py-1 px-1"></td>
-                          <td className="border-r border-black py-1 px-1 text-right">{fmt(taxBreakup.totalTaxable)}</td>
-                          <td className="border-r border-black py-1 px-1"></td>
-                          <td className="py-1 px-1 text-right">₹ {fmt(taxBreakup.total)}</td>
+                          <td colSpan={2} className="border-r border-black py-1.5 px-2"></td>
+                          <td className="border-r border-black py-1.5 px-2 text-right">{fmt(taxBreakup.totalTaxable)}</td>
+                          <td className="border-r border-black py-1.5 px-2"></td>
+                          <td className="py-1.5 px-2 text-right">₹ {fmt(taxBreakup.total)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">
+                          <td colSpan={8} className="border-r border-black py-1.5 px-2 text-right font-semibold">
                             TRANSPORT AMOUNT
                           </td>
-                          <td className="py-1 px-1 text-right">₹ {fmt(sale.other_amount)}</td>
+                          <td className="py-1.5 px-2 text-right">₹ {fmt(sale.other_amount)}</td>
                         </tr>
                         {taxBreakup.totalDiscount > 0 && (
                           <tr>
-                            <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">
+                            <td colSpan={8} className="border-r border-black py-1.5 px-2 text-right font-semibold">
                               DISCOUNT
                             </td>
-                            <td className="py-1 px-1 text-right">- ₹ {fmt(taxBreakup.totalDiscount)}</td>
+                            <td className="py-1.5 px-2 text-right">- ₹ {fmt(taxBreakup.totalDiscount)}</td>
                           </tr>
                         )}
                         <tr className="border-y border-black">
-                          <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-bold text-[12px]">
+                          <td colSpan={8} className="border-r border-black py-1.5 px-2 text-right font-bold text-[12px]">
                             GRAND TOTAL
                           </td>
-                          <td className="py-1 px-1 text-right font-bold text-[12px]">₹ {fmt(grandTotal)}</td>
+                          <td className="py-1.5 px-2 text-right font-bold text-[12px]">₹ {fmt(grandTotal)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-semibold">
+                          <td colSpan={8} className="border-r border-black py-1.5 px-2 text-right font-semibold">
                             PAID AMOUNT
                           </td>
-                          <td className="py-1 px-1 text-right text-green-700 font-bold">₹ {fmt(paidAmount)}</td>
+                          <td className="py-1.5 px-2 text-right text-green-700 font-bold">₹ {fmt(paidAmount)}</td>
                         </tr>
                         <tr className="border-t border-black">
-                          <td colSpan={8} className="border-r border-black py-1 px-2 text-right font-bold text-red-600">
+                          <td colSpan={8} className="border-r border-black py-1.5 px-2 text-right font-bold text-red-600">
                             REMAINING AMOUNT
                           </td>
-                          <td className="py-1 px-1 text-right text-red-600 font-bold">₹ {fmt(remainingAmount)}</td>
+                          <td className="py-1.5 px-2 text-right text-red-600 font-bold">₹ {fmt(remainingAmount)}</td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
 
                   {/* Amount in words */}
-                  <div className="border-b border-black p-1 text-[10px]">
+                  <div className="border-b border-black py-1.5 px-2.5 text-[10px]">
                     <span className="font-semibold">Total Amount (in words): </span>
                     {toWords(grandTotal)} Rupees Only
                   </div>
@@ -1315,7 +1336,7 @@ ${url}`;
                   {/* Bottom Section: Bank | Terms | Signature */}
                   <div className="grid grid-cols-3 min-h-[100px]">
                     {/* Bank Details */}
-                    <div className="p-2 border-r border-black">
+                    <div className="p-2.5 border-r border-black">
                       <div className="font-semibold mb-1">Bank Details</div>
                       <div className="grid grid-cols-[70px_1fr] gap-x-1 text-[10px]">
                         <div>Bank Name:</div>
@@ -1332,7 +1353,7 @@ ${url}`;
                     </div>
 
                     {/* Terms */}
-                    <div className="p-2 border-r border-black">
+                    <div className="p-2.5 border-r border-black">
                       <div className="font-semibold mb-1">Terms and Conditions</div>
                       <div className="whitespace-pre-line text-[9px] leading-tight">
                         {sale.remarks ||
@@ -1345,7 +1366,7 @@ ${url}`;
                     </div>
 
                     {/* Signature */}
-                    <div className="p-2 flex flex-col items-center justify-end text-center relative">
+                    <div className="p-2.5 flex flex-col items-center justify-end text-center relative">
                       <div className="absolute top-2 font-semibold text-[10px]">
                         For {company?.name || "Bhumisha Organics"}
                       </div>
