@@ -467,14 +467,14 @@ ${url}`;
           @media print {
             @page {
               size: A4 portrait;
-              margin: 0 !important;
+              margin: 6mm 8mm;
             }
             html,
             body {
               margin: 0 !important;
               padding: 0 !important;
               background: #ffffff !important;
-              width: 210mm !important;
+              width: 100% !important;
               height: auto !important;
               min-height: 0 !important;
               overflow: visible !important;
@@ -493,39 +493,46 @@ ${url}`;
             .mobile-invoice-view {
               display: none !important;
             }
-            .a4-container-wrap {
-              display: block !important;
-              width: 100% !important;
-              overflow: visible !important;
-              padding: 0 !important;
-              margin: 0 !important;
-            }
+            .a4-container-wrap,
             #invoice-wrap {
               display: block !important;
-              width: 210mm !important;
-              margin: 0 auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              min-width: 0 !important;
+              margin: 0 !important;
               padding: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
               gap: 0 !important;
             }
             .invoice-page {
-              display: flex !important;
-              flex-direction: column !important;
-              width: 210mm !important;
-              height: 297mm !important;
-              min-height: 297mm !important;
-              max-height: 297mm !important;
+              display: block !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              height: auto !important;
+              min-height: 0 !important;
+              max-height: none !important;
               box-sizing: border-box !important;
-              padding: 8mm 10mm !important;
+              padding: 0 !important;
               margin: 0 !important;
               box-shadow: none !important;
-              page-break-before: auto !important;
+              border: none !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
               page-break-after: always !important;
               break-after: page !important;
-              overflow: hidden !important;
+              overflow: visible !important;
             }
             .invoice-page:last-child {
               page-break-after: auto !important;
               break-after: auto !important;
+            }
+            .invoice-outer-box {
+              border: 1px solid black !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              height: auto !important;
+              min-height: 0 !important;
             }
           }
         `}
@@ -1039,13 +1046,13 @@ ${url}`;
             </button>
 
             <div className="grid grid-cols-2 gap-2">
-              <button
+              {/* <button
                 onClick={() => setViewMode("a4")}
                 className="flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-3 rounded-xl border border-gray-200 text-xs transition"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>View A4 Sheet</span>
-              </button>
+              </button> */}
 
               <button
                 onClick={handleWhatsAppShare}
@@ -1107,8 +1114,8 @@ ${url}`;
                 </div>
 
                 {/* Main Outer Border */}
-                <div className="border border-black flex flex-col flex-1">
-                  
+                <div className="invoice-outer-box border border-black flex flex-col">
+
                   {/* Row 1: Company & Invoice Info */}
                   <div className="grid grid-cols-2 border-b border-black">
                     {/* Company Details */}
@@ -1157,7 +1164,7 @@ ${url}`;
                         <div>
                           {safe(
                             formatDateTime(sale.challan_date) ||
-                              formatDateTime(sale.bill_date),
+                            formatDateTime(sale.bill_date),
                             ""
                           )}
                         </div>
@@ -1235,7 +1242,7 @@ ${url}`;
                   </div>
 
                   {/* Items Table */}
-                  <div className="flex-1 border-b border-black">
+                  <div className="border-b border-black w-full min-h-[140px]">
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-[#e6f2e6] border-b border-black">
@@ -1259,8 +1266,8 @@ ${url}`;
                           const gstp = Number(r.gst_percent || r.tax_percent || 0);
                           const gstAmt =
                             Number(r.gst_amount || r.cgst_amount || 0) +
-                              Number(r.sgst_amount || 0) +
-                              Number(r.igst_amount || 0) || (taxable * gstp) / 100;
+                            Number(r.sgst_amount || 0) +
+                            Number(r.igst_amount || 0) || (taxable * gstp) / 100;
                           const net = Number(r.net_total || taxable + gstAmt);
                           const unit = r.unit || r.unit_code || "NOS";
                           const desc = r.item_name || r.product_name || `#${r.product_id}`;
