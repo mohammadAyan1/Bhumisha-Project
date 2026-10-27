@@ -324,29 +324,8 @@ const Sales = {
       await ensureTransportColumns(conn, salesTable);
       await ensureTransportColumns(conn, 'sales');
 
-      // Bill no generation - IMPROVED LOGIC
-      // let finalBillNo = bill_no;
-      let salesBill;
-      if (!salesBill) {
-        const [lastBill] = await conn.execute(
-          `SELECT bill_no FROM sales 
-         WHERE bill_no LIKE 'BILL-%'
-         ORDER BY 
-           CAST(SUBSTRING(bill_no, 6) AS UNSIGNED) DESC,
-           bill_no DESC 
-         LIMIT 1`
-        );
-
-        let nextNumber = 1;
-        if (lastBill.length && lastBill[0].bill_no) {
-          const billNumber = lastBill[0].bill_no;
-          const match = billNumber.match(/BILL-(\d+)/);
-          if (match && match[1]) {
-            nextNumber = parseInt(match[1], 10) + 1;
-          }
-        }
-        salesBill = `BILL-${String(nextNumber).padStart(3, "0")}`;
-      }
+      // Bill no generation: use finalBillNo for both company and master tables
+      const salesBill = finalBillNo;
 
       // Insert into COMPANY-SPECIFIC sales table (first) with total_discount_amount
       const [companySaleRes] = await conn.execute(
@@ -393,7 +372,7 @@ const Sales = {
           party_type === "farmer" ? chosenId : null,
           party_type,
           buyer_type,
-          salesBill,
+          finalBillNo,
           bill_date,
           payment_status,
           payment_method,
@@ -707,13 +686,14 @@ const Sales = {
         }
       }
 
-      // New due and payment status
-      const new_due = Math.max(gross_due - cash, 0);
+      // Bill payment status based on this invoice's payments
       let final_payment_status = "Unpaid";
-      if (new_due <= 0 && (cash > 0 || gross_due === 0)) {
+      if (cash >= finalTotalAmount && finalTotalAmount > 0) {
         final_payment_status = "Paid";
-      } else if (cash > 0 && new_due > 0) {
+      } else if (cash > 0 && cash < finalTotalAmount) {
         final_payment_status = "Partial";
+      } else if (finalTotalAmount === 0) {
+        final_payment_status = "Paid";
       }
 
       // Persist payment_status in both tables
@@ -1022,11 +1002,14 @@ const Sales = {
       const gross_due = previous_due + finalTotalAmount;
       const new_due = Math.max(gross_due - cash_received, 0);
 
+      // Bill payment status based on this invoice's payments
       let final_payment_status = "Unpaid";
-      if (new_due <= 0 && (cash_received > 0 || gross_due === 0)) {
+      if (cash_received >= finalTotalAmount && finalTotalAmount > 0) {
         final_payment_status = "Paid";
-      } else if (cash_received > 0 && new_due > 0) {
+      } else if (cash_received > 0 && cash_received < finalTotalAmount) {
         final_payment_status = "Partial";
+      } else if (finalTotalAmount === 0) {
+        final_payment_status = "Paid";
       }
 
       // Update sales tables

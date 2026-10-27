@@ -761,11 +761,11 @@ const billController = {
           `
           );
 
-          // Get company sale ID (try to find by reference_id or use master sale_id)
+          // Get company sale ID (find by reference_id which links to master sale_id)
           const companySale = await executeTransactionQuery(
             transactionConnection,
-            `SELECT id FROM \`${salesTable}\` WHERE reference_id = ? OR id = ? LIMIT 1`,
-            [billId, billId]
+            `SELECT id FROM \`${salesTable}\` WHERE reference_id = ? LIMIT 1`,
+            [billId]
           );
 
           const companySaleId =
@@ -814,11 +814,11 @@ const billController = {
           `
           );
 
-          // Get company purchase ID
+          // Get company purchase ID (find by reference_id which links to master purchase_id)
           const companyPurchase = await executeTransactionQuery(
             transactionConnection,
-            `SELECT id FROM \`${purchasesTable}\` WHERE reference_id = ? OR id = ? LIMIT 1`,
-            [billId, billId]
+            `SELECT id FROM \`${purchasesTable}\` WHERE reference_id = ? LIMIT 1`,
+            [billId]
           );
 
           const companyPurchaseId =
@@ -891,15 +891,15 @@ const billController = {
             await executeTransactionQuery(
               transactionConnection,
               `UPDATE \`${salesTable}\` SET paid_amount = ?, payment_status = ?
-               WHERE reference_id = ? OR id = ?`,
-              [newPaidAmount, paymentStatus, billId, billId]
+               WHERE reference_id = ?`,
+              [newPaidAmount, paymentStatus, billId]
             );
           } else {
             await executeTransactionQuery(
               transactionConnection,
               `UPDATE \`${purchasesTable}\` SET paid_amount = ?
-               WHERE reference_id = ? OR id = ?`,
-              [newPaidAmount, billId, billId]
+               WHERE reference_id = ?`,
+              [newPaidAmount, billId]
             );
           }
         } catch (err) {

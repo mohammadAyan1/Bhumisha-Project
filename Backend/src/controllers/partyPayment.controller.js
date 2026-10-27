@@ -160,13 +160,13 @@ const PartyPaymentController = {
                 await conn.query(`
                 UPDATE \`${billTableCompany}\` 
                 SET paid_amount = ?, payment_status = ? 
-                WHERE id = ?
+                WHERE reference_id = ?
                 `, [newPaidAmount, newStatus, bill.id]);
             } else {
                 await conn.query(`
                 UPDATE \`${billTableCompany}\` 
                 SET paid_amount = ? 
-                WHERE id = ?
+                WHERE reference_id = ?
                 `, [newPaidAmount, bill.id]);
             }
         } catch(err) {
@@ -240,13 +240,13 @@ const PartyPaymentController = {
           queryStr = `
             SELECT COALESCE(SUM(total_amount), 0) as total_amount, COALESCE(SUM(paid_amount), 0) as paid_amount 
             FROM ${billTable} 
-            WHERE ${partyIdColumn} = ?${companyFilter} AND (payment_status != 'Paid' OR payment_status IS NULL)
+            WHERE ${partyIdColumn} = ?${companyFilter} AND (status IS NULL OR status != 'Inactive') AND (total_amount > COALESCE(paid_amount, 0))
           `;
       } else {
           queryStr = `
             SELECT COALESCE(SUM(total_amount), 0) as total_amount, COALESCE(SUM(paid_amount), 0) as paid_amount 
             FROM ${billTable} 
-            WHERE ${partyIdColumn} = ?${companyFilter} AND (total_amount > COALESCE(paid_amount, 0))
+            WHERE ${partyIdColumn} = ?${companyFilter} AND (status IS NULL OR status != 'Inactive') AND (total_amount > COALESCE(paid_amount, 0))
           `;
       }
       const [bills] = await conn.query(queryStr, queryParams);

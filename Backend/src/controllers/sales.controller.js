@@ -582,11 +582,14 @@ const SalesController = {
         const gross_due = previous_due + finalTotalAmount;
         const new_due = Math.max(gross_due - cash_received, 0);
 
+        // Bill payment status based on this invoice's payments
         let final_payment_status = "Unpaid";
-        if (new_due <= 0 && (cash_received > 0 || gross_due === 0)) {
+        if (cash_received >= finalTotalAmount && finalTotalAmount > 0) {
           final_payment_status = "Paid";
-        } else if (cash_received > 0 && new_due > 0) {
+        } else if (cash_received > 0 && cash_received < finalTotalAmount) {
           final_payment_status = "Partial";
+        } else if (finalTotalAmount === 0) {
+          final_payment_status = "Paid";
         }
 
         // Update COMPANY sales table
