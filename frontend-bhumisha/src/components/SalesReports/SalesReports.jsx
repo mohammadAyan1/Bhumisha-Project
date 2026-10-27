@@ -1985,6 +1985,8 @@ const SalesReports = () => {
                         bill.vendor_name ||
                         bill.farmer_name ||
                         "-";
+                      const paidAmount = Number(bill?._raw?.saleDetails?.paid_amount) || 0;
+                      const balanceAmount = Math.max(0, rowTotal - paidAmount);
 
                       return (
                         <tr
@@ -2022,10 +2024,10 @@ const SalesReports = () => {
                             {bill.total_gst.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-right text-green-600 font-medium">
-                            {bill?._raw?.saleDetails?.paid_amount || "0.00"}
+                            {paidAmount.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-blue-600">
-                            {rowTotal.toFixed(2)}
+                            {balanceAmount.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {hasMultiple ? (
@@ -2314,7 +2316,7 @@ const SalesReports = () => {
                             colSpan={10}
                             className="px-4 py-3 text-right text-gray-800"
                           >
-                            Total Amount
+                            Remaining Balance
                           </td>
                           <td className="px-4 py-3 text-right text-lg text-blue-600">
                             {(

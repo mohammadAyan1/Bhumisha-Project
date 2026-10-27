@@ -623,6 +623,8 @@ const Sales = {
         }
       }
 
+      const new_due = Math.max(gross_due - cash, 0);
+
       if (cash > 0) {
         // Insert into COMPANY-SPECIFIC payments table
         const [companyPaymentRes] = await conn.execute(
