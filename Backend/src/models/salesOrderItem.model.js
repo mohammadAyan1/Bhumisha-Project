@@ -67,8 +67,22 @@ const SalesOrderItem = {
       data.status || "Active",
       data.buyer_type || "retailer",
     ];
-    const [res] = await q(sql, values);
-    return res;
+    try {
+      const [res] = await q(sql, values);
+      return res;
+    } catch (err) {
+      if (err.message && err.message.includes("custom_product_name")) {
+        try {
+          await q("ALTER TABLE sales_order_items MODIFY COLUMN product_id INT NULL");
+          await q("ALTER TABLE sales_order_items ADD COLUMN custom_product_name VARCHAR(255) NULL AFTER product_id");
+          const [res] = await q(sql, values);
+          return res;
+        } catch (alterErr) {
+          throw alterErr;
+        }
+      }
+      throw err;
+    }
   },
 
   // Items by Sales Order Id, product_name join ke saath
@@ -99,8 +113,26 @@ const SalesOrderItem = {
       WHERE soi.\`sales_order_id\` = ?
       ORDER BY soi.\`id\` ASC
     `;
-    const [rows] = await q(sql, [toNum(id)]);
-    return rows;
+    try {
+      const [rows] = await q(sql, [toNum(id)]);
+      return rows;
+    } catch (err) {
+      if (err.message && err.message.includes("custom_product_name")) {
+        try {
+          await q("ALTER TABLE sales_order_items MODIFY COLUMN product_id INT NULL");
+          await q("ALTER TABLE sales_order_items ADD COLUMN custom_product_name VARCHAR(255) NULL AFTER product_id");
+          const [rows] = await q(sql, [toNum(id)]);
+          return rows;
+        } catch (alterErr) {
+          const fallbackSql = sql
+            .replace("soi.`custom_product_name`,", "NULL AS `custom_product_name`,")
+            .replace("COALESCE(p.`product_name`, soi.`custom_product_name`)", "p.`product_name`");
+          const [rows] = await q(fallbackSql, [toNum(id)]);
+          return rows;
+        }
+      }
+      throw err;
+    }
   },
 
   // Update editable fields only; generated columns DB khud compute karega

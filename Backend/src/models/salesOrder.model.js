@@ -108,8 +108,26 @@ const SalesOrder = {
       )
       ORDER BY so.id DESC, soi.id ASC
     `;
-    const [rows] = await q(sql);
-    return rows;
+    try {
+      const [rows] = await q(sql);
+      return rows;
+    } catch (err) {
+      if (err.message && err.message.includes("custom_product_name")) {
+        try {
+          await q("ALTER TABLE sales_order_items MODIFY COLUMN product_id INT NULL");
+          await q("ALTER TABLE sales_order_items ADD COLUMN custom_product_name VARCHAR(255) NULL AFTER product_id");
+          const [rows] = await q(sql);
+          return rows;
+        } catch (alterErr) {
+          const fallbackSql = sql
+            .replace("soi.custom_product_name,", "NULL AS custom_product_name,")
+            .replace("COALESCE(p.product_name, soi.custom_product_name)", "p.product_name");
+          const [rows] = await q(fallbackSql);
+          return rows;
+        }
+      }
+      throw err;
+    }
   },
 
   getById: async (id) => {
