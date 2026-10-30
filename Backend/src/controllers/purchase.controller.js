@@ -274,6 +274,10 @@ const purchaseController = {
           name: "reference_id",
           sql: "ADD COLUMN reference_id INT DEFAULT NULL COMMENT 'ID from other table'",
         },
+        {
+          name: "delete_reason",
+          sql: "ADD COLUMN delete_reason TEXT NULL",
+        },
       ];
 
       // Alter purchases tables (similar to your existing code)
@@ -1766,18 +1770,58 @@ const purchaseController = {
       const purchasesTable = tn(code, "purchases");
       const itemsTable = tn(code, "purchase_items");
 
-      const [purchases] = await connection.query(`
-        SELECT
-          p.id, p.bill_no, p.bill_date, p.total_amount, p.status, p.delete_reason, p.party_type, p.bill_img,
-          p.paid_amount, p.discount_percent, p.discount_amount, p.gst_amount, p.taxable_amount,
-          p.base_amount, p.payment_method, p.payment_note, p.terms_condition, p.unit as purchase_unit,
-          v.vendor_name, v.firm_name, v.address as vendor_address, v.contact_number as vendor_contact,
-          f.name AS farmer_name, f.contact_number as farmer_contact
-        FROM \`${purchasesTable}\` p
-        LEFT JOIN vendors v ON p.vendor_id = v.id
-        LEFT JOIN farmers f ON p.farmer_id = f.id
-        ORDER BY p.id DESC
-      `);
+      let purchases;
+      try {
+        [purchases] = await connection.query(`
+          SELECT
+            p.id, p.bill_no, p.bill_date, p.total_amount, p.status, p.delete_reason, p.party_type, p.bill_img,
+            p.paid_amount, p.discount_percent, p.discount_amount, p.gst_amount, p.taxable_amount,
+            p.base_amount, p.payment_method, p.payment_note, p.terms_condition, p.unit as purchase_unit,
+            v.vendor_name, v.firm_name, v.address as vendor_address, v.contact_number as vendor_contact,
+            f.name AS farmer_name, f.contact_number as farmer_contact
+          FROM \`${purchasesTable}\` p
+          LEFT JOIN vendors v ON p.vendor_id = v.id
+          LEFT JOIN farmers f ON p.farmer_id = f.id
+          ORDER BY p.id DESC
+        `);
+      } catch (queryErr) {
+        if (queryErr.message && queryErr.message.includes("delete_reason")) {
+          // If delete_reason column is missing, attempt to add it and retry
+          try {
+            await connection.query(
+              `ALTER TABLE \`${purchasesTable}\` ADD COLUMN delete_reason TEXT NULL`
+            );
+            [purchases] = await connection.query(`
+              SELECT
+                p.id, p.bill_no, p.bill_date, p.total_amount, p.status, p.delete_reason, p.party_type, p.bill_img,
+                p.paid_amount, p.discount_percent, p.discount_amount, p.gst_amount, p.taxable_amount,
+                p.base_amount, p.payment_method, p.payment_note, p.terms_condition, p.unit as purchase_unit,
+                v.vendor_name, v.firm_name, v.address as vendor_address, v.contact_number as vendor_contact,
+                f.name AS farmer_name, f.contact_number as farmer_contact
+              FROM \`${purchasesTable}\` p
+              LEFT JOIN vendors v ON p.vendor_id = v.id
+              LEFT JOIN farmers f ON p.farmer_id = f.id
+              ORDER BY p.id DESC
+            `);
+          } catch (alterErr) {
+            // Graceful fallback: return NULL for delete_reason so API does not crash
+            [purchases] = await connection.query(`
+              SELECT
+                p.id, p.bill_no, p.bill_date, p.total_amount, p.status, NULL AS delete_reason, p.party_type, p.bill_img,
+                p.paid_amount, p.discount_percent, p.discount_amount, p.gst_amount, p.taxable_amount,
+                p.base_amount, p.payment_method, p.payment_note, p.terms_condition, p.unit as purchase_unit,
+                v.vendor_name, v.firm_name, v.address as vendor_address, v.contact_number as vendor_contact,
+                f.name AS farmer_name, f.contact_number as farmer_contact
+              FROM \`${purchasesTable}\` p
+              LEFT JOIN vendors v ON p.vendor_id = v.id
+              LEFT JOIN farmers f ON p.farmer_id = f.id
+              ORDER BY p.id DESC
+            `);
+          }
+        } else {
+          throw queryErr;
+        }
+      }
 
       if (purchases.length === 0) return res.json([]);
 
@@ -2227,6 +2271,12 @@ const purchaseController = {
       await connection.query(`UPDATE \`${purchasesTable}\` SET status='Active', delete_reason=NULL WHERE id = ?`, [id]);
 
       if (masterPurchaseId) {
+        const [masterColCheck] = await connection.query(
+          `SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'purchases' AND COLUMN_NAME = 'delete_reason'`
+        );
+        if (masterColCheck[0]?.count === 0) {
+          await connection.query(`ALTER TABLE purchases ADD COLUMN delete_reason TEXT NULL`);
+        }
         await connection.query(`UPDATE purchase_items SET status='Active' WHERE purchase_id = ?`, [masterPurchaseId]);
         await connection.query(`UPDATE purchases SET status='Active', delete_reason=NULL WHERE id = ?`, [masterPurchaseId]);
       }
