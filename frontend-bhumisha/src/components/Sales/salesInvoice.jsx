@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  FileSignature,
 } from "lucide-react";
 
 const formatDateTime = (dateString) => {
@@ -133,8 +134,18 @@ export default function SalesInvoice() {
   const [copiedField, setCopiedField] = useState(null);
 
   const location = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const [withSignature, setWithSignature] = useState(
+    searchParams.get("sign") === "1"
+  );
   const ref = useRef(null);
   const { token } = useParams();
+
+  // Preload stamp image
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/img/bhumisha_seal_sign.png";
+  }, []);
 
   // Screen size detection for responsive layout
   useEffect(() => {
@@ -227,7 +238,10 @@ export default function SalesInvoice() {
       const lineC = Number(r.cgst_amount || 0);
       const lineS = Number(r.sgst_amount || 0);
       const lineI = Number(r.igst_amount || 0);
-      const totalGst = lineGstAmt || lineC + lineS + lineI;
+      const totalGst =
+        lineGstAmt ||
+        (lineC + lineS + lineI) ||
+        (lineTaxable * gstPercent) / 100;
       const net = Number(r.net_total || lineTaxable + totalGst);
 
       totalTaxable += lineTaxable;
@@ -372,7 +386,9 @@ export default function SalesInvoice() {
       auto: sale?.id,
     });
 
-    const url = `${window.location.origin}/sales-invoice/${token}`;
+    const url = `${window.location.origin}/sales-invoice/${token}${
+      withSignature ? "?sign=1" : ""
+    }`;
 
     const message = `Hello,
 Invoice No: ${sale.bill_no}
@@ -618,6 +634,29 @@ ${url}`;
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Share</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setWithSignature((prev) => !prev)}
+              className={`flex items-center gap-1.5 font-semibold text-xs py-1.5 px-3 rounded-lg shadow-sm transition border cursor-pointer ${
+                withSignature
+                  ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-purple-100"
+                  : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
+              }`}
+              title={
+                withSignature
+                  ? "Signature included in bill (Click to remove)"
+                  : "Click to include Signature & Stamp in bill"
+              }
+            >
+              <FileSignature className="w-3.5 h-3.5" />
+              <span>{withSignature ? "With Sign" : "Without Sign"}</span>
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  withSignature ? "bg-emerald-400" : "bg-gray-400"
+                }`}
+              />
             </button>
           </div>
         </div>
@@ -1018,15 +1057,33 @@ ${url}`;
             </div>
 
             <div className="pt-3 border-t border-gray-100 flex flex-col items-center text-center">
-              <div className="text-xs font-bold text-gray-800">
-                For {company?.name || "Bhumisha Organics"}
-              </div>
-              <div className="mt-4 border-t border-gray-400 w-36 pt-1 text-[11px] font-semibold text-gray-700">
-                Authorised Signatory
-              </div>
-              <div className="text-[10px] text-gray-400 mt-1">
-                This is a computer generated invoice, no signature required.
-              </div>
+              {withSignature ? (
+                <>
+                  <div className="flex items-center justify-center my-1">
+                    <img
+                      src="/img/bhumisha_seal_sign.png"
+                      alt="Authorised Signatory"
+                      className="h-24 w-auto object-contain"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                  <div className="border-t border-gray-400 w-36 pt-1 text-[11px] font-semibold text-gray-700">
+                    Authorised Signatory
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs font-bold text-gray-800">
+                    For {company?.name || "Bhumisha Organics"}
+                  </div>
+                  <div className="mt-4 border-t border-gray-400 w-36 pt-1 text-[11px] font-semibold text-gray-700">
+                    Authorised Signatory
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-1">
+                    This is a computer generated invoice, no signature required.
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1046,13 +1103,18 @@ ${url}`;
             </button>
 
             <div className="grid grid-cols-2 gap-2">
-              {/* <button
-                onClick={() => setViewMode("a4")}
-                className="flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-3 rounded-xl border border-gray-200 text-xs transition"
+              <button
+                type="button"
+                onClick={() => setWithSignature((prev) => !prev)}
+                className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold border transition ${
+                  withSignature
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200"
+                }`}
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>View A4 Sheet</span>
-              </button> */}
+                <FileSignature className="w-3.5 h-3.5" />
+                <span>{withSignature ? "With Sign" : "Without Sign"}</span>
+              </button>
 
               <button
                 onClick={handleWhatsAppShare}
@@ -1253,7 +1315,7 @@ ${url}`;
                           <th className="border-r border-black py-1.5 px-2 w-12">UNIT</th>
                           <th className="border-r border-black py-1.5 px-2 w-16">RATE</th>
                           <th className="border-r border-black py-1.5 px-2 w-20">TAXABLE</th>
-                          <th className="border-r border-black py-1.5 px-2 w-12">% GST</th>
+                          <th className="border-r border-black py-1.5 px-2 w-16 text-center">% GST</th>
                           <th className="py-1.5 px-2 w-24 text-right">AMOUNT</th>
                         </tr>
                       </thead>
@@ -1295,7 +1357,7 @@ ${url}`;
                           </td>
                           <td colSpan={2} className="border-r border-black py-1.5 px-2"></td>
                           <td className="border-r border-black py-1.5 px-2 text-right">{fmt(taxBreakup.totalTaxable)}</td>
-                          <td className="border-r border-black py-1.5 px-2"></td>
+                          <td className="border-r border-black py-1.5 px-2 text-right">{fmt(taxBreakup.totalGst)}</td>
                           <td className="py-1.5 px-2 text-right">₹ {fmt(taxBreakup.total)}</td>
                         </tr>
                         <tr>
@@ -1373,16 +1435,34 @@ ${url}`;
                     </div>
 
                     {/* Signature */}
-                    <div className="p-2.5 flex flex-col items-center justify-end text-center relative">
-                      <div className="absolute top-2 font-semibold text-[10px]">
-                        For {company?.name || "Bhumisha Organics"}
-                      </div>
-                      <div className="mt-8 border-t border-black w-3/4 pt-1 text-[10px] font-semibold">
-                        Authorised Signatory
-                      </div>
-                      <div className="text-[8px] mt-1 text-gray-500">
-                        This is a computer generated invoice, no signature required.
-                      </div>
+                    <div className="p-2 flex flex-col items-center justify-end text-center relative min-h-[105px]">
+                      {withSignature ? (
+                        <>
+                          <div className="flex-1 flex items-center justify-center">
+                            <img
+                              src="/img/bhumisha_seal_sign.png"
+                              alt="Authorised Signatory"
+                              className="h-20 w-auto object-contain"
+                              crossOrigin="anonymous"
+                            />
+                          </div>
+                          <div className="border-t border-black w-3/4 pt-1 text-[10px] font-semibold">
+                            Authorised Signatory
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="absolute top-2 font-semibold text-[10px]">
+                            For {company?.name || "Bhumisha Organics"}
+                          </div>
+                          <div className="mt-8 border-t border-black w-3/4 pt-1 text-[10px] font-semibold">
+                            Authorised Signatory
+                          </div>
+                          <div className="text-[8px] mt-1 text-gray-500">
+                            This is a computer generated invoice, no signature required.
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
